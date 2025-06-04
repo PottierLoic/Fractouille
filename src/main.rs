@@ -12,10 +12,17 @@ use std::time::Duration;
 
 type PaletteFn = fn(t: f64) -> Color;
 
+#[derive(Debug)]
+enum Set {
+  Mandelbrot,
+  Julia,
+}
+
 #[derive(Debug, Default)]
 struct App {
   state: AppState,
   fractal: FractalWidget,
+  frame_counter: u64,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -35,6 +42,9 @@ struct FractalWidget {
   need_render: bool,
   palettes: Vec<PaletteFn>,
   current_palette: usize,
+  set: Set,
+  real: f64,
+  imag: f64,
 }
 
 impl Default for FractalWidget {
@@ -97,6 +107,9 @@ impl Default for FractalWidget {
         electric_palette,
       ],
       current_palette: 0,
+      set: Set::Julia,
+      real: -0.5251993,
+      imag: -0.5251993,
     }
   }
 }
@@ -112,8 +125,14 @@ fn main() -> Result<()> {
 impl App {
   fn run(mut self, mut term: DefaultTerminal) -> Result<()> {
     while self.state == AppState::Running {
+      let t = self.frame_counter as f64 * 0.02;
+      self.fractal.real = 0.7885 * t.cos();
+      self.fractal.imag = 0.7885 * t.sin();
+      self.fractal.need_render = true;
+
       term.draw(|f| f.render_widget(&mut self, f.area()))?;
       self.handle_input()?;
+      self.frame_counter += 1;
     }
     Ok(())
   }
@@ -140,7 +159,13 @@ impl App {
           KeyCode::Char('w') | KeyCode::Up => f.center_y -= step,
           KeyCode::Char('s') | KeyCode::Down => f.center_y += step,
           KeyCode::Char(' ') => f.current_palette = (f.current_palette + 1) % f.palettes.len(),
-          _ => f.need_render = false,
+          KeyCode::Enter => {
+            f.set = match f.set {
+              Set::Mandelbrot => Set::Julia,
+              Set::Julia => Set::Mandelbrot,
+            }
+          }
+          _ => {},
         }
         if f.need_render {
           f.colors.clear();
@@ -155,7 +180,7 @@ impl Widget for &mut App {
   fn render(self, area: Rect, buf: &mut Buffer) {
     let [top, main] = Layout::vertical([Length(1), Min(0)]).areas(area);
     let [title, _] = Layout::horizontal([Min(0), Length(8)]).areas(top);
-    Text::from("Fractouille // +/- zoom | wasd move | r/f iterations | space change palette")
+    Text::from("Fractouille // +/- zoom | wasd move | r/f iterations | space for palettes | enter for sets")
       .centered()
       .render(title, buf);
     self.fractal.render(main, buf);
@@ -164,7 +189,10 @@ impl Widget for &mut App {
 
 impl Widget for &mut FractalWidget {
   fn render(self, area: Rect, buf: &mut Buffer) {
-    self.compute_mandelbrot(area);
+    match self.set {
+      Set::Mandelbrot => { self.compute_mandelbrot(area) }
+      Set::Julia => { self.compute_julia(area) }
+    }
     for (xi, x) in (area.left()..area.right()).enumerate() {
       let xi = (xi + 1) % area.width as usize;
       for (yi, y) in (area.top()..area.bottom()).enumerate() {
@@ -179,7 +207,7 @@ impl Widget for &mut FractalWidget {
 impl FractalWidget {
   fn compute_mandelbrot(&mut self, area: Rect) {
     let (w, h) = (area.width as usize, area.height as usize * 2);
-    if self.colors.len() == h && self.colors[0].len() == w || !self.need_render {
+    if self.colors.len() == h && self.colors[0].len() == w && !self.need_render {
       return;
     }
 
@@ -209,11 +237,55 @@ impl FractalWidget {
               Color::Black
             } else {
               let t = i as f64 / self.max_iterations as f64;
-              (self.palettes[self.current_palette])(t)
+              self.palettes[self.current_palette](t)
             }
           })
           .collect()
       })
       .collect();
   }
+
+  fn compute_julia(&mut self, area: Rect) {
+    let (w, h) = (area.width as usize, area.height as usize * 2);
+    if self.colors.len() == h && self.colors[0].len() == w && !self.need_render {
+      return;
+    }
+
+    let aspect = w as f64 / h as f64;
+    let vw = 3.5 / self.scale;
+    let vh = vw / aspect;
+    let (left, top) = (self.center_x - vw / 2.0, self.center_y - vh / 2.0);
+
+    let c_re = self.real;
+    let c_im = self.imag;
+
+    self.colors = (0..h)
+      .map(|y| {
+        (0..w)
+          .map(|x| {
+            let zx = left + x as f64 * vw / w as f64;
+            let zy = top + y as f64 * vh / h as f64;
+            let mut zx = zx;
+            let mut zy = zy;
+            let mut i = 0;
+
+            while zx * zx + zy * zy <= 4.0 && i < self.max_iterations {
+              let tmp = zx * zx - zy * zy + c_re;
+              zy = 2.0 * zx * zy + c_im;
+              zx = tmp;
+              i += 1;
+            }
+
+            if i == self.max_iterations {
+              Color::Black
+            } else {
+              let t = i as f64 / self.max_iterations as f64;
+              self.palettes[self.current_palette](t)
+            }
+          })
+          .collect()
+      })
+      .collect();
+  }
+
 }
