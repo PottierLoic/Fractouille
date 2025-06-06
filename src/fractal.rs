@@ -4,9 +4,10 @@ use image::{Rgb, RgbImage};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Position, Rect};
 use ratatui::prelude::{Color, Widget};
+use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Set {
   Mandelbrot,
   Julia,
@@ -123,36 +124,72 @@ impl FractalWidget {
       .collect();
   }
 
-  pub fn save_screenshot(&mut self) {
-    let (w, h) = (3840, 2160);
-    let mut img = RgbImage::new(w, h);
-    let (vw, vh, left, top) = self.get_viewport(w as usize, h as usize);
+  pub fn save_screenshot(&self) {
+    let center_x = self.center_x;
+    let center_y = self.center_y;
+    let scale = self.scale;
+    let real = self.real;
+    let imag = self.imag;
+    let set = self.set.clone();
+    let palette_fn = self.palettes[self.current_palette];
+    let max_iterations = self.max_iterations;
 
-    for y in 0..h {
-      for x in 0..w {
-        let (zx, zy, cx, cy) = match self.set {
-          Set::Mandelbrot => {
-            let cx = left + x as f64 * vw / w as f64;
-            let cy = top + y as f64 * vh / h as f64;
-            (0.0, 0.0, cx, cy)
-          }
-          Set::Julia => {
-            let zx = left + x as f64 * vw / w as f64;
-            let zy = top + y as f64 * vh / h as f64;
-            (zx, zy, self.real, self.imag)
-          }
-        };
+    thread::spawn(move || {
+      let (w, h) = (3840, 2160);
+      let mut img = RgbImage::new(w, h);
 
-        let iterations = self.iterate_point(zx, zy, cx, cy);
-        let color = self.get_color(iterations);
-        let rgb = color_to_rgb(&color);
-        img.put_pixel(x, y, Rgb([rgb.0, rgb.1, rgb.2]));
+      let aspect = w as f64 / h as f64;
+      let vw = 3.5 / scale;
+      let vh = vw / aspect;
+      let left = center_x - vw / 2.0;
+      let top = center_y - vh / 2.0;
+
+      for y in 0..h {
+        for x in 0..w {
+          let (zx, zy, cx, cy) = match set {
+            Set::Mandelbrot => {
+              let cx = left + x as f64 * vw / w as f64;
+              let cy = top + y as f64 * vh / h as f64;
+              (0.0, 0.0, cx, cy)
+            }
+            Set::Julia => {
+              let zx = left + x as f64 * vw / w as f64;
+              let zy = top + y as f64 * vh / h as f64;
+              (zx, zy, real, imag)
+            }
+          };
+
+          let iterations = {
+            let mut i = 0;
+            let mut zx = zx;
+            let mut zy = zy;
+            while zx * zx + zy * zy <= 4.0 && i < max_iterations {
+              let tmp = zx * zx - zy * zy + cx;
+              zy = 2.0 * zx * zy + cy;
+              zx = tmp;
+              i += 1;
+            }
+            i
+          };
+
+          let color = if iterations == max_iterations {
+            Color::Black
+          } else {
+            let t = iterations as f64 / max_iterations as f64;
+            palette_fn(t)
+          };
+
+          let rgb = color_to_rgb(&color);
+          img.put_pixel(x, y, Rgb([rgb.0, rgb.1, rgb.2]));
+        }
       }
-    }
-    let timestamp = SystemTime::now()
+
+      let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    img.save(format!("screenshot_{}.png", timestamp)).unwrap();
+
+      img.save(format!("screenshot_{}.png", timestamp)).unwrap();
+    });
   }
 }
