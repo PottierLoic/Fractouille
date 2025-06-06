@@ -9,6 +9,8 @@ use ratatui::{
   widgets::Widget,
 };
 use std::time::Duration;
+use crossterm::style::Colors;
+use image::{Rgb, RgbImage};
 
 type PaletteFn = fn(t: f64) -> Color;
 
@@ -107,7 +109,7 @@ impl Default for FractalWidget {
         electric_palette,
       ],
       current_palette: 0,
-      set: Set::Julia,
+      set: Set::Mandelbrot,
       real: -0.5251993,
       imag: -0.5251993,
     }
@@ -139,6 +141,7 @@ impl App {
 
   fn handle_input(&mut self) -> Result<()> {
     let timeout = Duration::from_secs_f32(1.0 / 60.0);
+    let mut save_requested = false;
     if event::poll(timeout)? {
       if let Event::Key(key) = event::read()? {
         if key.kind != KeyEventKind::Press {
@@ -165,6 +168,7 @@ impl App {
               Set::Julia => Set::Mandelbrot,
             }
           }
+          KeyCode::Char('g') => save_requested = true,
           _ => {},
         }
         if f.need_render {
@@ -172,7 +176,59 @@ impl App {
         }
       }
     }
+    if save_requested {
+      self.save_screenshot();
+    }
     Ok(())
+  }
+
+  fn save_screenshot(&mut self) {
+    let (w, h) = (3840, 2160);
+    let mut colors: Vec<Vec<Color>> = Vec::new();
+
+    let aspect = w as f64 / h as f64;
+    let vw = 3.5 / self.fractal.scale;
+    let vh = vw / aspect;
+    let (left, top) = (self.fractal.center_x - vw / 2.0, self.fractal.center_y - vh / 2.0);
+
+    colors = (0..h)
+      .map(|y| {
+        (0..w)
+          .map(|x| {
+            let cx = left + x as f64 * vw / w as f64;
+            let cy = top + y as f64 * vh / h as f64;
+            let mut zx = 0.0;
+            let mut zy = 0.0;
+            let mut i = 0;
+
+            while zx * zx + zy * zy <= 4.0 && i < self.fractal.max_iterations {
+              let tmp = zx * zx - zy * zy + cx;
+              zy = 2.0 * zx * zy + cy;
+              zx = tmp;
+              i += 1;
+            }
+
+            if i == self.fractal.max_iterations {
+              Color::Black
+            } else {
+              let t = i as f64 / self.fractal.max_iterations as f64;
+              self.fractal.palettes[self.fractal.current_palette](t)
+            }
+          })
+          .collect()
+      })
+      .collect();
+
+    let mut img = RgbImage::new(w, h);
+
+    for (y, row) in colors.iter().enumerate() {
+      for (x, color) in row.iter().enumerate() {
+        let rgb = color_to_rgb(color);
+        img.put_pixel(x as u32, y as u32, Rgb([rgb.0, rgb.1, rgb.2]));
+      }
+    }
+
+    img.save("screenshot.png").unwrap();
   }
 }
 
@@ -288,4 +344,28 @@ impl FractalWidget {
       .collect();
   }
 
+}
+
+
+fn color_to_rgb(color: &Color) -> (u8, u8, u8) {
+  match color {
+    Color::Black => (0, 0, 0),
+    Color::Red => (255, 0, 0),
+    Color::Green => (0, 255, 0),
+    Color::Yellow => (255, 255, 0),
+    Color::Blue => (0, 0, 255),
+    Color::Magenta => (255, 0, 255),
+    Color::Cyan => (0, 255, 255),
+    Color::Gray => (128, 128, 128),
+    Color::DarkGray => (64, 64, 64),
+    Color::LightRed => (255, 128, 128),
+    Color::LightGreen => (128, 255, 128),
+    Color::LightYellow => (255, 255, 128),
+    Color::LightBlue => (128, 128, 255),
+    Color::LightMagenta => (255, 128, 255),
+    Color::LightCyan => (128, 255, 255),
+    Color::White => (255, 255, 255),
+    Color::Rgb(r, g, b) => (*r, *g, *b),
+    _ => (0, 0, 0),
+  }
 }
