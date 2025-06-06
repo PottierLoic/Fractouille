@@ -4,6 +4,7 @@ use image::{Rgb, RgbImage};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Position, Rect};
 use ratatui::prelude::{Color, Widget};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug)]
 pub enum Set {
@@ -148,6 +149,10 @@ impl FractalWidget {
         img.put_pixel(x, y, Rgb([rgb.0, rgb.1, rgb.2]));
       }
     }
-    img.save("screenshot.png").unwrap();
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    img.save(format!("screenshot_{}.png", timestamp)).unwrap();
   }
 }
