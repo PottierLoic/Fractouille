@@ -169,10 +169,16 @@ impl FractalWidget {
               zx = tmp;
               i += 1;
             }
-            i
+
+            if i < max_iterations {
+              let log_zn = (zx * zx + zy * zy).sqrt().ln().ln();
+              i as f64 + 1.0 - log_zn / std::f64::consts::LN_2
+            } else {
+              i as f64
+            }
           };
 
-          let color = if iterations == max_iterations {
+          let color = if iterations == max_iterations as f64 {
             Color::Black
           } else {
             let t = iterations as f64 / max_iterations as f64;
