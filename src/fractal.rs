@@ -135,7 +135,7 @@ impl FractalWidget {
     let max_iterations = self.max_iterations;
 
     thread::spawn(move || {
-      let (w, h) = (3840, 2160);
+      let (w, h) = (1920, 1080);
       let mut img = RgbImage::new(w, h);
 
       let aspect = w as f64 / h as f64;

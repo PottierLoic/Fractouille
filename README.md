@@ -1,8 +1,10 @@
 # Fractouille
 
+![](example.png)
+
 Fractouille is a simple fractal explorer running in your terminal.
 
-You can find all the keybinds in the title bar !
+You can find all the keybinds in the title bar!
 
 TODO:
 - [x] Mandelbrot
@@ -14,3 +16,7 @@ TODO:
 - [ ] Saving location
 - [ ] Auto move / zoom to saved locations
 - [ ] Make more and better looking color palettes
+
+Here are some screenshots taken in the mandelbrot set:
+![](museum/mandelbrot.png)
+![](museum/spiral.png)
