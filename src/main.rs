@@ -77,7 +77,8 @@ impl App {
           KeyCode::Enter => {
             f.set = match f.set {
               Set::Mandelbrot => Set::Julia,
-              Set::Julia => Set::Mandelbrot,
+              Set::Julia => Set::BurningShip,
+              Set::BurningShip => Set::Mandelbrot,
             }
           }
           KeyCode::Char('g') => save_requested = true,
