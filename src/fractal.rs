@@ -11,6 +11,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub enum Set {
   Mandelbrot,
   Julia,
+  BurningShip,
 }
 
 #[derive(Debug)]
@@ -73,11 +74,25 @@ impl FractalWidget {
 
   fn iterate_point(&self, mut zx: f64, mut zy: f64, cx: f64, cy: f64) -> u32 {
     let mut i = 0;
-    while zx * zx + zy * zy <= 4.0 && i < self.max_iterations {
-      let tmp = zx * zx - zy * zy + cx;
-      zy = 2.0 * zx * zy + cy;
-      zx = tmp;
-      i += 1;
+    match self.set {
+      Set::Mandelbrot | Set::Julia => {
+        while zx * zx + zy * zy <= 4.0 && i < self.max_iterations {
+          let tmp = zx * zx - zy * zy + cx;
+          zy = 2.0 * zx * zy + cy;
+          zx = tmp;
+          i += 1;
+        }
+      }
+      Set::BurningShip => {
+        while zx * zx + zy * zy <= 4.0 && i < self.max_iterations {
+          let abs_zx = zx.abs();
+          let abs_zy = zy.abs();
+          let tmp = abs_zx * abs_zx - abs_zy * abs_zy + cx;
+          zy = 2.0 * abs_zx * abs_zy + cy;
+          zx = tmp;
+          i += 1;
+        }
+      }
     }
     i
   }
@@ -104,7 +119,7 @@ impl FractalWidget {
         (0..w)
           .map(|x| {
             let (zx, zy, cx, cy) = match self.set {
-              Set::Mandelbrot => {
+              Set::Mandelbrot | Set::BurningShip => {
                 let cx = left + x as f64 * vw / w as f64;
                 let cy = top + y as f64 * vh / h as f64;
                 (0.0, 0.0, cx, cy)
@@ -147,7 +162,7 @@ impl FractalWidget {
       for y in 0..h {
         for x in 0..w {
           let (zx, zy, cx, cy) = match set {
-            Set::Mandelbrot => {
+            Set::Mandelbrot | Set::BurningShip => {
               let cx = left + x as f64 * vw / w as f64;
               let cy = top + y as f64 * vh / h as f64;
               (0.0, 0.0, cx, cy)
@@ -163,11 +178,25 @@ impl FractalWidget {
             let mut i = 0;
             let mut zx = zx;
             let mut zy = zy;
-            while zx * zx + zy * zy <= 4.0 && i < max_iterations {
-              let tmp = zx * zx - zy * zy + cx;
-              zy = 2.0 * zx * zy + cy;
-              zx = tmp;
-              i += 1;
+            match set {
+              Set::BurningShip => {
+                while zx * zx + zy * zy <= 4.0 && i < max_iterations {
+                  let abs_zx = zx.abs();
+                  let abs_zy = zy.abs();
+                  let tmp = abs_zx * abs_zx - abs_zy * abs_zy + cx;
+                  zy = 2.0 * abs_zx * abs_zy + cy;
+                  zx = tmp;
+                  i += 1;
+                }
+              }
+              _ => {
+                while zx * zx + zy * zy <= 4.0 && i < max_iterations {
+                  let tmp = zx * zx - zy * zy + cx;
+                  zy = 2.0 * zx * zy + cy;
+                  zx = tmp;
+                  i += 1;
+                }
+              }
             }
 
             if i < max_iterations {
@@ -195,7 +224,14 @@ impl FractalWidget {
         .unwrap()
         .as_secs();
 
-      img.save(format!("screenshot_{}.png", timestamp)).unwrap();
+      let name = match set {
+        Set::Mandelbrot => "mandelbrot",
+        Set::Julia => "julia",
+        Set::BurningShip => "burningship",
+      };
+      img
+        .save(format!("screenshot_{}_{}.png", name, timestamp))
+        .unwrap();
     });
   }
 }
