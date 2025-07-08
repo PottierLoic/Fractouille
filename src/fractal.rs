@@ -120,7 +120,7 @@ impl FractalWidget {
           .map(|x| {
             let (zx, zy, cx, cy) = match self.set {
               Set::Mandelbrot | Set::BurningShip => {
-                let cx = left + x as f64 *  vw/ w as f64;
+                let cx = left + x as f64 * vw / w as f64;
                 let cy = top + y as f64 * vh / h as f64;
                 (0.0, 0.0, cx, cy)
               }
@@ -229,7 +229,9 @@ impl FractalWidget {
         Set::Julia => "julia",
         Set::BurningShip => "burningship",
       };
-      img.save(format!("screenshot_{}_{}.png", name, timestamp)).unwrap();
+      img
+        .save(format!("screenshot_{}_{}.png", name, timestamp))
+        .unwrap();
     });
   }
 }
