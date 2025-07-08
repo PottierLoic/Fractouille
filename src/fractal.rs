@@ -224,7 +224,12 @@ impl FractalWidget {
         .unwrap()
         .as_secs();
 
-      img.save(format!("screenshot_{}.png", timestamp)).unwrap();
+      let name = match set {
+        Set::Mandelbrot => "mandelbrot",
+        Set::Julia => "julia",
+        Set::BurningShip => "burningship",
+      };
+      img.save(format!("screenshot_{}_{}.png", name, timestamp)).unwrap();
     });
   }
 }
