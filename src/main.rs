@@ -1,8 +1,9 @@
 mod fractal;
 mod palettes;
 mod utils;
+mod fractal_colorizer;
 
-use crate::fractal::{FractalWidget, Set};
+use crate::fractal::{Fractal, Set};
 use color_eyre::Result;
 use ratatui::{
   DefaultTerminal,
@@ -17,7 +18,7 @@ use std::time::Duration;
 #[derive(Debug, Default)]
 struct App {
   state: AppState,
-  fractal: FractalWidget,
+  fractal: Fractal,
   frame_counter: u64,
 }
 
