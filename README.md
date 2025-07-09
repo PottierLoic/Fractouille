@@ -6,6 +6,8 @@ Fractouille is a simple fractal explorer running in your terminal.
 
 You can find all the keybinds in the title bar!
 
+It is better to use cargo build --release to build it, as it is a bit slow otherwise.
+
 TODO:
 - [x] Mandelbrot
 - [x] Julia
@@ -21,3 +23,4 @@ TODO:
 Here are some screenshots:
 ![](museum/mandelbrot.png)
 ![](museum/base_ship.png)
+![](museum/screenshot_burningship_1752007049.png)
