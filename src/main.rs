@@ -1,8 +1,9 @@
 mod fractal;
+mod fractal_colorizer;
 mod palettes;
 mod utils;
 
-use crate::fractal::{FractalWidget, Set};
+use crate::fractal::{Fractal, Set};
 use color_eyre::Result;
 use ratatui::{
   DefaultTerminal,
@@ -17,8 +18,8 @@ use std::time::Duration;
 #[derive(Debug, Default)]
 struct App {
   state: AppState,
-  fractal: FractalWidget,
-  frame_counter: u64,
+  fractal: Fractal,
+  show_extended_menu: bool,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -39,14 +40,8 @@ fn main() -> Result<()> {
 impl App {
   fn run(mut self, mut term: DefaultTerminal) -> Result<()> {
     while self.state == AppState::Running {
-      let t = self.frame_counter as f64 * 0.02;
-      self.fractal.real = 0.7885 * t.cos();
-      self.fractal.imag = 0.7885 * t.sin();
-      self.fractal.need_render = true;
-
       term.draw(|f| f.render_widget(&mut self, f.area()))?;
       self.handle_input()?;
-      self.frame_counter += 1;
     }
     Ok(())
   }
@@ -64,6 +59,10 @@ impl App {
         f.need_render = true;
 
         match key.code {
+          KeyCode::Char('h') | KeyCode::Char('H') => {
+            self.show_extended_menu = !self.show_extended_menu;
+            f.need_render = true;
+          }
           KeyCode::Char('q') => self.state = AppState::Quit,
           KeyCode::Char('+') | KeyCode::Char('=') => f.scale *= 1.1,
           KeyCode::Char('-') => f.scale /= 1.1,
@@ -74,6 +73,16 @@ impl App {
           KeyCode::Char('w') | KeyCode::Up => f.center_y -= step,
           KeyCode::Char('s') | KeyCode::Down => f.center_y += step,
           KeyCode::Char(' ') => f.current_palette = (f.current_palette + 1) % f.palettes.len(),
+          KeyCode::Char('o') => f.power -= f.step,
+          KeyCode::Char('p') => f.power += f.step,
+          KeyCode::Char('u') => f.real -= f.step,
+          KeyCode::Char('U') => f.imag -= f.step,
+          KeyCode::Char('i') => f.real += f.step,
+          KeyCode::Char('I') => f.imag += f.step,
+          KeyCode::Char('O') => f.power = f.power.floor(),
+          KeyCode::Char('P') => f.power = f.power.ceil(),
+          KeyCode::Char('t') => f.step /= 10.0,
+          KeyCode::Char('y') => f.step *= 10.0,
           KeyCode::Enter => {
             f.set = match f.set {
               Set::Mandelbrot => Set::Julia,
@@ -98,17 +107,70 @@ impl App {
 
 impl Widget for &mut App {
   fn render(self, area: Rect, buf: &mut Buffer) {
-    let [top, main] = Layout::vertical([Length(1), Min(0)]).areas(area);
-    let [title, _] = Layout::horizontal([Min(0), Length(8)]).areas(top);
-    Text::from(
-      format!(
-        "Fractouille // Set: {:?} | Palette: {} | Zoom: {:.2}x | Iter: {} // +/- zoom | wasd move | r/f iterations | space palettes | enter sets | g save",
+    let layout = if self.show_extended_menu {
+      Layout::vertical([Length(9), Min(0)])
+    } else {
+      Layout::vertical([Length(1), Min(0)])
+    };
+
+    let [menu, main] = layout.areas(area);
+
+    if self.show_extended_menu {
+      let extended_info = vec![
+        format!(
+          "Fractouille // Set: {:?} | Palette: {} | Zoom: {:.2}x | Iter: {}",
+          self.fractal.set,
+          self.fractal.current_palette,
+          self.fractal.scale,
+          self.fractal.max_iterations
+        ),
+        "press G to take a high quality screenshot !".to_string(),
+        "WASD/Arrows - Move around | +/- - Zoom in/out".to_string(),
+        format!(
+          "Current position: ({:.6}, {:.6})",
+          self.fractal.center_x, self.fractal.center_y
+        ),
+        format!(
+          "Enter - Switch set ({:?}) | R/F - Iter ({}) | Space - Next palette",
+          self.fractal.set, self.fractal.max_iterations
+        ),
+        if self.fractal.set == Set::Mandelbrot || self.fractal.set == Set::Julia {
+          format!(
+            "O/P - decrease / increase power - Shift+O/P for decimals ({:.2}) |",
+            self.fractal.power
+          )
+        } else {
+          "".to_string()
+        },
+        if self.fractal.set == Set::Julia {
+          format!(
+          "U/I - decrease / increase julia real part - Shift+U/I for imag part ({:.6}, {:.6})",
+          self.fractal.real, self.fractal.imag
+          )
+        } else {
+          "".to_string()
+        },
+        format!(
+          "t/y - decrease / increase step ({:.6})",
+          self.fractal.step
+        ),
+        "H - Close extended menu | Q - Quit".to_string(),
+      ];
+
+      Text::from(extended_info.join("\n")).render(menu, buf);
+    } else {
+      let [title, _] = Layout::horizontal([Min(0), Length(8)]).areas(menu);
+      Text::from(format!(
+        "Fractouille // Set: {:?} | Palette: {} | Zoom: {:.2}x | Iter: {} (H to extend menu)",
         self.fractal.set,
         self.fractal.current_palette,
         self.fractal.scale,
         self.fractal.max_iterations
-      )
-    ).centered().render(title, buf);
+      ))
+      .centered()
+      .render(title, buf);
+    }
+
     self.fractal.render(main, buf);
   }
 }
