@@ -19,7 +19,6 @@ use std::time::Duration;
 struct App {
   state: AppState,
   fractal: Fractal,
-  frame_counter: u64,
   show_extended_menu: bool,
 }
 
@@ -41,14 +40,8 @@ fn main() -> Result<()> {
 impl App {
   fn run(mut self, mut term: DefaultTerminal) -> Result<()> {
     while self.state == AppState::Running {
-      let t = self.frame_counter as f64 * 0.02;
-      self.fractal.real = 0.7885 * t.cos();
-      self.fractal.imag = 0.7885 * t.sin();
-      self.fractal.need_render = true;
-
       term.draw(|f| f.render_widget(&mut self, f.area()))?;
       self.handle_input()?;
-      self.frame_counter += 1;
     }
     Ok(())
   }
