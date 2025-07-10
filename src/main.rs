@@ -80,6 +80,10 @@ impl App {
           KeyCode::Char('w') | KeyCode::Up => f.center_y -= step,
           KeyCode::Char('s') | KeyCode::Down => f.center_y += step,
           KeyCode::Char(' ') => f.current_palette = (f.current_palette + 1) % f.palettes.len(),
+          KeyCode::Char('o') => f.power -= 1.0,
+          KeyCode::Char('O') => f.power -= 0.01,
+          KeyCode::Char('p') => f.power += 1.0,
+          KeyCode::Char('P') => f.power += 0.01,
           KeyCode::Enter => {
             f.set = match f.set {
               Set::Mandelbrot => Set::Julia,
@@ -105,7 +109,7 @@ impl App {
 impl Widget for &mut App {
   fn render(self, area: Rect, buf: &mut Buffer) {
     let layout = if self.show_extended_menu {
-      Layout::vertical([Length(6), Min(0)])
+      Layout::vertical([Length(7), Min(0)])
     } else {
       Layout::vertical([Length(1), Min(0)])
     };
@@ -122,16 +126,20 @@ impl Widget for &mut App {
           self.fractal.max_iterations
         ),
         "press G to take a high quality screenshot !".to_string(),
-        "".to_string(),
-        "  WASD/Arrows - Move around     | +/- - Zoom in/out".to_string(),
+        "WASD/Arrows - Move around | +/- - Zoom in/out".to_string(),
         format!(
-          "  Current position: ({:.6}, {:.6})",
+          "Current position: ({:.6}, {:.6})",
           self.fractal.center_x, self.fractal.center_y
         ),
         format!(
           "Enter - Switch set ({:?}) | R/F - Iter ({}) | Space - Next palette",
           self.fractal.set, self.fractal.max_iterations
         ),
+        format!(
+          "O/P - decrease / increase power - Shift+O/P for decimals ({:.2}) |",
+          self.fractal.power
+        ),
+        "H - Close extended menu | Q - Quit".to_string(),
       ];
 
       Text::from(extended_info.join("\n")).render(menu, buf);

@@ -37,6 +37,7 @@ fn iterate_point(
   cx: f64,
   cy: f64,
   max_iterations: u32,
+  power: f64,
 ) -> (u32, f64, f64) {
   let mut i = 0;
   match set {
@@ -51,11 +52,24 @@ fn iterate_point(
       }
     }
     _ => {
-      while zx * zx + zy * zy <= 4.0 && i < max_iterations {
-        let tmp = zx * zx - zy * zy + cx;
-        zy = 2.0 * zx * zy + cy;
-        zx = tmp;
-        i += 1;
+      if power == 2.0 {
+        while zx * zx + zy * zy <= 4.0 && i < max_iterations {
+          let tmp = zx * zx - zy * zy + cx;
+          zy = 2.0 * zx * zy + cy;
+          zx = tmp;
+          i += 1;
+        }
+      } else {
+        while zx * zx + zy * zy <= 4.0 && i < max_iterations {
+          let r = (zx * zx + zy * zy).sqrt();
+          let theta = zy.atan2(zx);
+          let r_pow = r.powf(power);
+          let angle = power * theta;
+
+          zx = r_pow * angle.cos() + cx;
+          zy = r_pow * angle.sin() + cy;
+          i += 1;
+        }
       }
     }
   }
@@ -70,8 +84,9 @@ pub fn iterate_point_raw(
   cx: f64,
   cy: f64,
   max_iterations: u32,
+  power: f64,
 ) -> u32 {
-  let (i, _, _) = iterate_point(set, zx, zy, cx, cy, max_iterations);
+  let (i, _, _) = iterate_point(set, zx, zy, cx, cy, max_iterations, power);
   i
 }
 
@@ -82,8 +97,9 @@ pub fn iterate_point_smooth(
   cx: f64,
   cy: f64,
   max_iterations: u32,
+  power: f64,
 ) -> f64 {
-  let (i, zx, zy) = iterate_point(set, zx, zy, cx, cy, max_iterations);
+  let (i, zx, zy) = iterate_point(set, zx, zy, cx, cy, max_iterations, power);
   if i < max_iterations {
     let log_zn = (zx * zx + zy * zy).sqrt().ln().ln();
     i as f64 + 1.0 - log_zn / std::f64::consts::LN_2

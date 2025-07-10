@@ -29,6 +29,7 @@ pub struct Fractal {
   pub set: Set,
   pub real: f64,
   pub imag: f64,
+  pub power: f64,
 }
 
 impl Default for Fractal {
@@ -45,6 +46,7 @@ impl Default for Fractal {
       set: Set::Mandelbrot,
       real: -0.5251993,
       imag: -0.5251993,
+      power: 2.0,
     }
   }
 }
@@ -79,7 +81,9 @@ impl Fractal {
       self.scale,
       self.real,
       self.imag,
-      |zx, zy, cx, cy| iterate_point_raw(&self.set, zx, zy, cx, cy, self.max_iterations) as f64,
+      |zx, zy, cx, cy| {
+        iterate_point_raw(&self.set, zx, zy, cx, cy, self.max_iterations, self.power) as f64
+      },
       |iter| {
         <Color as FractalColorizer<Color>>::colorize(
           iter,
@@ -100,6 +104,7 @@ impl Fractal {
     let set = self.set.clone();
     let palette_fn = self.palettes[self.current_palette];
     let max_iterations = self.max_iterations;
+    let power = self.power;
 
     thread::spawn(move || {
       let (w, h) = (1920, 1080);
@@ -115,7 +120,7 @@ impl Fractal {
         scale,
         real,
         imag,
-        |zx, zy, cx, cy| iterate_point_smooth(&set, zx, zy, cx, cy, max_iterations) as f64,
+        |zx, zy, cx, cy| iterate_point_smooth(&set, zx, zy, cx, cy, max_iterations, power) as f64,
         colorize,
       );
 
