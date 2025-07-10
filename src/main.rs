@@ -77,6 +77,10 @@ impl App {
           KeyCode::Char('O') => f.power -= 0.01,
           KeyCode::Char('p') => f.power += 1.0,
           KeyCode::Char('P') => f.power += 0.01,
+          KeyCode::Char('u') => f.real -= 0.01,
+          KeyCode::Char('U') => f.imag -= 0.01,
+          KeyCode::Char('i') => f.real += 0.01,
+          KeyCode::Char('I') => f.imag += 0.01,
           KeyCode::Enter => {
             f.set = match f.set {
               Set::Mandelbrot => Set::Julia,
@@ -102,7 +106,7 @@ impl App {
 impl Widget for &mut App {
   fn render(self, area: Rect, buf: &mut Buffer) {
     let layout = if self.show_extended_menu {
-      Layout::vertical([Length(7), Min(0)])
+      Layout::vertical([Length(8), Min(0)])
     } else {
       Layout::vertical([Length(1), Min(0)])
     };
@@ -128,10 +132,22 @@ impl Widget for &mut App {
           "Enter - Switch set ({:?}) | R/F - Iter ({}) | Space - Next palette",
           self.fractal.set, self.fractal.max_iterations
         ),
-        format!(
-          "O/P - decrease / increase power - Shift+O/P for decimals ({:.2}) |",
-          self.fractal.power
-        ),
+        if self.fractal.set == Set::Mandelbrot || self.fractal.set == Set::Julia {
+          format!(
+            "O/P - decrease / increase power - Shift+O/P for decimals ({:.2}) |",
+            self.fractal.power
+          )
+        } else {
+          "".to_string()
+        },
+        if self.fractal.set == Set::Julia {
+          format!(
+          "U/I - decrease / increase julia real part - Shift+U/I for imag part ({:.2}, {:.2})",
+          self.fractal.real, self.fractal.imag
+          )
+        } else {
+          "".to_string()
+        },
         "H - Close extended menu | Q - Quit".to_string(),
       ];
 

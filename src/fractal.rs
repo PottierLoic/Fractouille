@@ -9,7 +9,7 @@ use ratatui::prelude::{Color, Widget};
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Set {
   Mandelbrot,
   Julia,
