@@ -18,7 +18,7 @@ TODO:
 - [ ] Saving location
 - [ ] Auto move / zoom to saved locations
 - [ ] Make more and better looking color palettes
-- [ ] Being able to change the power, not only quadratic
+- [x] Being able to change the power, not only quadratic
 
 Here are some screenshots:
 ![](museum/mandelbrot.png)
