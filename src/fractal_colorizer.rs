@@ -1,8 +1,8 @@
-use image::Rgb;
-use ratatui::style::Color;
 use crate::fractal::Set;
 use crate::palettes::PaletteFn;
 use crate::utils::color_to_rgb;
+use image::Rgb;
+use ratatui::style::Color;
 
 pub trait FractalColorizer<T> {
   fn colorize(iter: f64, max_iter: u32, palette: PaletteFn) -> T;
@@ -63,12 +63,26 @@ fn iterate_point(
   (i, zx, zy)
 }
 
-pub fn iterate_point_raw(set: &Set, zx: f64, zy: f64, cx: f64, cy: f64, max_iterations: u32) -> u32 {
+pub fn iterate_point_raw(
+  set: &Set,
+  zx: f64,
+  zy: f64,
+  cx: f64,
+  cy: f64,
+  max_iterations: u32,
+) -> u32 {
   let (i, _, _) = iterate_point(set, zx, zy, cx, cy, max_iterations);
   i
 }
 
-pub fn iterate_point_smooth(set: &Set, zx: f64, zy: f64, cx: f64, cy: f64, max_iterations: u32) -> f64 {
+pub fn iterate_point_smooth(
+  set: &Set,
+  zx: f64,
+  zy: f64,
+  cx: f64,
+  cy: f64,
+  max_iterations: u32,
+) -> f64 {
   let (i, zx, zy) = iterate_point(set, zx, zy, cx, cy, max_iterations);
   if i < max_iterations {
     let log_zn = (zx * zx + zy * zy).sqrt().ln().ln();
@@ -120,4 +134,3 @@ pub fn generate_image<T: Clone, I: Fn(f64, f64, f64, f64) -> f64, C: Fn(f64) -> 
     })
     .collect()
 }
-

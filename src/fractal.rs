@@ -1,3 +1,6 @@
+use crate::fractal_colorizer::FractalColorizer;
+use crate::fractal_colorizer::generate_image;
+use crate::fractal_colorizer::{iterate_point_raw, iterate_point_smooth};
 use crate::palettes::{PaletteFn, all_palettes};
 use image::{Rgb, RgbImage};
 use ratatui::buffer::Buffer;
@@ -5,9 +8,6 @@ use ratatui::layout::{Position, Rect};
 use ratatui::prelude::{Color, Widget};
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::fractal_colorizer::FractalColorizer;
-use crate::fractal_colorizer::generate_image;
-use crate::fractal_colorizer::{iterate_point_raw, iterate_point_smooth};
 
 #[derive(Debug, Clone)]
 pub enum Set {
@@ -80,7 +80,13 @@ impl Fractal {
       self.real,
       self.imag,
       |zx, zy, cx, cy| iterate_point_raw(&self.set, zx, zy, cx, cy, self.max_iterations) as f64,
-      |iter| <Color as FractalColorizer<Color>>::colorize(iter, self.max_iterations, self.palettes[self.current_palette]),
+      |iter| {
+        <Color as FractalColorizer<Color>>::colorize(
+          iter,
+          self.max_iterations,
+          self.palettes[self.current_palette],
+        )
+      },
     );
     self.colors = raw_colors;
   }

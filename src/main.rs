@@ -1,7 +1,7 @@
 mod fractal;
+mod fractal_colorizer;
 mod palettes;
 mod utils;
-mod fractal_colorizer;
 
 use crate::fractal::{Fractal, Set};
 use color_eyre::Result;
@@ -20,6 +20,7 @@ struct App {
   state: AppState,
   fractal: Fractal,
   frame_counter: u64,
+  show_extended_menu: bool,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -65,6 +66,10 @@ impl App {
         f.need_render = true;
 
         match key.code {
+          KeyCode::Char('h') | KeyCode::Char('H') => {
+            self.show_extended_menu = !self.show_extended_menu;
+            f.need_render = true;
+          }
           KeyCode::Char('q') => self.state = AppState::Quit,
           KeyCode::Char('+') | KeyCode::Char('=') => f.scale *= 1.1,
           KeyCode::Char('-') => f.scale /= 1.1,
@@ -99,17 +104,50 @@ impl App {
 
 impl Widget for &mut App {
   fn render(self, area: Rect, buf: &mut Buffer) {
-    let [top, main] = Layout::vertical([Length(1), Min(0)]).areas(area);
-    let [title, _] = Layout::horizontal([Min(0), Length(8)]).areas(top);
-    Text::from(
-      format!(
-        "Fractouille // Set: {:?} | Palette: {} | Zoom: {:.2}x | Iter: {} // +/- zoom | wasd move | r/f iterations | space palettes | enter sets | g save",
+    let layout = if self.show_extended_menu {
+      Layout::vertical([Length(6), Min(0)])
+    } else {
+      Layout::vertical([Length(1), Min(0)])
+    };
+
+    let [menu, main] = layout.areas(area);
+
+    if self.show_extended_menu {
+      let extended_info = vec![
+        format!(
+          "Fractouille // Set: {:?} | Palette: {} | Zoom: {:.2}x | Iter: {}",
+          self.fractal.set,
+          self.fractal.current_palette,
+          self.fractal.scale,
+          self.fractal.max_iterations
+        ),
+        "press G to take a high quality screenshot !".to_string(),
+        "".to_string(),
+        "  WASD/Arrows - Move around     | +/- - Zoom in/out".to_string(),
+        format!(
+          "  Current position: ({:.6}, {:.6})",
+          self.fractal.center_x, self.fractal.center_y
+        ),
+        format!(
+          "Enter - Switch set ({:?}) | R/F - Iter ({}) | Space - Next palette",
+          self.fractal.set, self.fractal.max_iterations
+        ),
+      ];
+
+      Text::from(extended_info.join("\n")).render(menu, buf);
+    } else {
+      let [title, _] = Layout::horizontal([Min(0), Length(8)]).areas(menu);
+      Text::from(format!(
+        "Fractouille // Set: {:?} | Palette: {} | Zoom: {:.2}x | Iter: {} (H to extend menu)",
         self.fractal.set,
         self.fractal.current_palette,
         self.fractal.scale,
         self.fractal.max_iterations
-      )
-    ).centered().render(title, buf);
+      ))
+      .centered()
+      .render(title, buf);
+    }
+
     self.fractal.render(main, buf);
   }
 }
