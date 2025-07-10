@@ -73,14 +73,16 @@ impl App {
           KeyCode::Char('w') | KeyCode::Up => f.center_y -= step,
           KeyCode::Char('s') | KeyCode::Down => f.center_y += step,
           KeyCode::Char(' ') => f.current_palette = (f.current_palette + 1) % f.palettes.len(),
-          KeyCode::Char('o') => f.power -= 1.0,
-          KeyCode::Char('O') => f.power -= 0.01,
-          KeyCode::Char('p') => f.power += 1.0,
-          KeyCode::Char('P') => f.power += 0.01,
-          KeyCode::Char('u') => f.real -= 0.01,
-          KeyCode::Char('U') => f.imag -= 0.01,
-          KeyCode::Char('i') => f.real += 0.01,
-          KeyCode::Char('I') => f.imag += 0.01,
+          KeyCode::Char('o') => f.power -= f.step,
+          KeyCode::Char('p') => f.power += f.step,
+          KeyCode::Char('u') => f.real -= f.step,
+          KeyCode::Char('U') => f.imag -= f.step,
+          KeyCode::Char('i') => f.real += f.step,
+          KeyCode::Char('I') => f.imag += f.step,
+          KeyCode::Char('O') => f.power = f.power.floor(),
+          KeyCode::Char('P') => f.power = f.power.ceil(),
+          KeyCode::Char('t') => f.step /= 10.0,
+          KeyCode::Char('y') => f.step *= 10.0,
           KeyCode::Enter => {
             f.set = match f.set {
               Set::Mandelbrot => Set::Julia,
@@ -106,7 +108,7 @@ impl App {
 impl Widget for &mut App {
   fn render(self, area: Rect, buf: &mut Buffer) {
     let layout = if self.show_extended_menu {
-      Layout::vertical([Length(8), Min(0)])
+      Layout::vertical([Length(9), Min(0)])
     } else {
       Layout::vertical([Length(1), Min(0)])
     };
@@ -142,12 +144,16 @@ impl Widget for &mut App {
         },
         if self.fractal.set == Set::Julia {
           format!(
-          "U/I - decrease / increase julia real part - Shift+U/I for imag part ({:.2}, {:.2})",
+          "U/I - decrease / increase julia real part - Shift+U/I for imag part ({:.6}, {:.6})",
           self.fractal.real, self.fractal.imag
           )
         } else {
           "".to_string()
         },
+        format!(
+          "t/y - decrease / increase step ({:.6})",
+          self.fractal.step
+        ),
         "H - Close extended menu | Q - Quit".to_string(),
       ];
 

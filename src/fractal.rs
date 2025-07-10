@@ -30,6 +30,7 @@ pub struct Fractal {
   pub real: f64,
   pub imag: f64,
   pub power: f64,
+  pub step: f64,
 }
 
 impl Default for Fractal {
@@ -47,6 +48,7 @@ impl Default for Fractal {
       real: -0.5251993,
       imag: -0.5251993,
       power: 2.0,
+      step: 0.01,
     }
   }
 }
