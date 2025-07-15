@@ -2,7 +2,7 @@
 name = "fractouille"
 version = "0.1.0"
 edition = "2024"
-license-file = "LICENSE.md"
+license = "MIT"
 
 [dependencies]
 color-eyre = "0.6.5"
