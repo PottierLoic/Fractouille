@@ -122,7 +122,7 @@ impl Fractal {
         scale,
         real,
         imag,
-        |zx, zy, cx, cy| iterate_point_smooth(&set, zx, zy, cx, cy, max_iterations, power) as f64,
+        |zx, zy, cx, cy| iterate_point_smooth(&set, zx, zy, cx, cy, max_iterations, power),
         colorize,
       );
 
