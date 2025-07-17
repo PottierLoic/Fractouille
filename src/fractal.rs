@@ -1,4 +1,4 @@
-use crate::fractal_colorizer::generate_image;
+use crate::fractal_maths::generate_image;
 use image::RgbImage;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Position, Rect};

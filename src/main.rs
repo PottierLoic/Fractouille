@@ -1,6 +1,6 @@
 mod command;
 mod fractal;
-mod fractal_colorizer;
+mod fractal_maths;
 mod palettes;
 
 use crate::command::CommandProcessor;
