@@ -1,8 +1,10 @@
+mod command;
 mod fractal;
 mod fractal_colorizer;
 mod palettes;
 mod utils;
 
+use crate::command::CommandProcessor;
 use crate::fractal::{Fractal, Set};
 use color_eyre::Result;
 use ratatui::{
@@ -20,6 +22,9 @@ struct App {
   state: AppState,
   fractal: Fractal,
   show_extended_menu: bool,
+  command_mode: bool,
+  command_string: String,
+  quit_requested: bool,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -54,52 +59,66 @@ impl App {
         if key.kind != KeyEventKind::Press {
           return Ok(());
         }
-        let f = &mut self.fractal;
-        let step = 0.1 / f.scale;
-        f.need_render = true;
 
-        match key.code {
-          KeyCode::Char('h') | KeyCode::Char('H') => {
-            self.show_extended_menu = !self.show_extended_menu;
-            f.need_render = true;
-          }
-          KeyCode::Char('q') => self.state = AppState::Quit,
-          KeyCode::Char('+') | KeyCode::Char('=') => f.scale *= 1.1,
-          KeyCode::Char('-') => f.scale /= 1.1,
-          KeyCode::Char('r') => f.max_iterations += 1,
-          KeyCode::Char('f') => f.max_iterations = f.max_iterations.saturating_sub(1),
-          KeyCode::Char('a') | KeyCode::Left => f.center_x -= step,
-          KeyCode::Char('d') | KeyCode::Right => f.center_x += step,
-          KeyCode::Char('w') | KeyCode::Up => f.center_y -= step,
-          KeyCode::Char('s') | KeyCode::Down => f.center_y += step,
-          KeyCode::Char(' ') => f.current_palette = (f.current_palette + 1) % f.palettes.len(),
-          KeyCode::Char('o') => f.power -= f.step,
-          KeyCode::Char('p') => f.power += f.step,
-          KeyCode::Char('u') => f.real -= f.step,
-          KeyCode::Char('U') => f.imag -= f.step,
-          KeyCode::Char('i') => f.real += f.step,
-          KeyCode::Char('I') => f.imag += f.step,
-          KeyCode::Char('O') => f.power = f.power.floor(),
-          KeyCode::Char('P') => f.power = f.power.ceil(),
-          KeyCode::Char('t') => f.step /= 10.0,
-          KeyCode::Char('y') => f.step *= 10.0,
-          KeyCode::Enter => {
-            f.set = match f.set {
-              Set::Mandelbrot => Set::Julia,
-              Set::Julia => Set::BurningShip,
-              Set::BurningShip => Set::Mandelbrot,
+        if self.command_mode {
+          match key.code {
+            KeyCode::Esc => {
+              self.command_mode = false;
+              self.command_string.clear();
             }
+            KeyCode::Backspace => {
+              self.command_string.pop();
+            }
+            KeyCode::Enter => {
+              self.command_mode = false;
+              CommandProcessor::execute(self)?;
+              self.command_string.clear();
+            }
+            KeyCode::Char(c) => {
+              self.command_string.push(c);
+            }
+            _ => {}
           }
-          KeyCode::Char('g') => save_requested = true,
-          _ => {}
+        } else {
+          let f = &mut self.fractal;
+          let step = 0.1 / f.scale;
+          f.need_render = true;
+
+          match key.code {
+            KeyCode::Char(':') => {
+              self.command_mode = true;
+              self.command_string.clear();
+            }
+            KeyCode::Char('+') | KeyCode::Char('=') => f.scale *= 1.1,
+            KeyCode::Char('-') => f.scale /= 1.1,
+            KeyCode::Char('r') => f.max_iterations += 1,
+            KeyCode::Char('f') => f.max_iterations = f.max_iterations.saturating_sub(1),
+            KeyCode::Char('a') | KeyCode::Left => f.center_x -= step,
+            KeyCode::Char('d') | KeyCode::Right => f.center_x += step,
+            KeyCode::Char('w') | KeyCode::Up => f.center_y -= step,
+            KeyCode::Char('s') | KeyCode::Down => f.center_y += step,
+            KeyCode::Char(' ') => f.current_palette = (f.current_palette + 1) % f.palettes.len(),
+            KeyCode::Enter => {
+              f.set = match f.set {
+                Set::Mandelbrot => Set::Julia,
+                Set::Julia => Set::BurningShip,
+                Set::BurningShip => Set::Mandelbrot,
+              }
+            }
+            KeyCode::Char('g') => save_requested = true,
+            _ => {}
+          }
         }
-        if f.need_render {
-          f.colors.clear();
+        if self.fractal.need_render {
+          self.fractal.colors.clear();
         }
       }
     }
     if save_requested {
       self.fractal.save_screenshot();
+    }
+    if self.quit_requested {
+      self.state = AppState::Quit;
     }
     Ok(())
   }
@@ -108,12 +127,12 @@ impl App {
 impl Widget for &mut App {
   fn render(self, area: Rect, buf: &mut Buffer) {
     let layout = if self.show_extended_menu {
-      Layout::vertical([Length(9), Min(0)])
+      Layout::vertical([Length(5), Min(0), Length(1)])
     } else {
-      Layout::vertical([Length(1), Min(0)])
+      Layout::vertical([Length(1), Min(0), Length(1)])
     };
 
-    let [menu, main] = layout.areas(area);
+    let [menu, main, cmd_bar] = layout.areas(area);
 
     if self.show_extended_menu {
       let extended_info = vec![
@@ -134,34 +153,17 @@ impl Widget for &mut App {
           "Enter - Switch set ({:?}) | R/F - Iter ({}) | Space - Next palette",
           self.fractal.set, self.fractal.max_iterations
         ),
-        if self.fractal.set == Set::Mandelbrot || self.fractal.set == Set::Julia {
-          format!(
-            "O/P - decrease / increase power - Shift+O/P for decimals ({:.2}) |",
-            self.fractal.power
-          )
+        if self.command_mode {
+          "ESC - Exit command mode".to_string()
         } else {
           "".to_string()
         },
-        if self.fractal.set == Set::Julia {
-          format!(
-          "U/I - decrease / increase julia real part - Shift+U/I for imag part ({:.6}, {:.6})",
-          self.fractal.real, self.fractal.imag
-          )
-        } else {
-          "".to_string()
-        },
-        format!(
-          "t/y - decrease / increase step ({:.6})",
-          self.fractal.step
-        ),
-        "H - Close extended menu | Q - Quit".to_string(),
       ];
-
       Text::from(extended_info.join("\n")).render(menu, buf);
     } else {
       let [title, _] = Layout::horizontal([Min(0), Length(8)]).areas(menu);
       Text::from(format!(
-        "Fractouille // Set: {:?} | Palette: {} | Zoom: {:.2}x | Iter: {} (H to extend menu)",
+        "Fractouille // Set: {:?} | Palette: {} | Zoom: {:.2}x | Iter: {} (:h to extend menu)",
         self.fractal.set,
         self.fractal.current_palette,
         self.fractal.scale,
@@ -172,5 +174,9 @@ impl Widget for &mut App {
     }
 
     self.fractal.render(main, buf);
+
+    if self.command_mode {
+      Text::from(format!(":{}", self.command_string)).render(cmd_bar, buf);
+    }
   }
 }

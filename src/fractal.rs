@@ -27,8 +27,7 @@ pub struct Fractal {
   pub palettes: Vec<PaletteFn>,
   pub current_palette: usize,
   pub set: Set,
-  pub real: f64,
-  pub imag: f64,
+  pub julia_constant: (f64, f64),
   pub power: f64,
   pub step: f64,
 }
@@ -45,8 +44,7 @@ impl Default for Fractal {
       palettes: all_palettes(),
       current_palette: 0,
       set: Set::Mandelbrot,
-      real: -0.5251993,
-      imag: -0.5251993,
+      julia_constant: (-0.5251993, -0.5251993),
       power: 2.0,
       step: 0.01,
     }
@@ -81,8 +79,8 @@ impl Fractal {
       self.center_x,
       self.center_y,
       self.scale,
-      self.real,
-      self.imag,
+      self.julia_constant.0,
+      self.julia_constant.1,
       |zx, zy, cx, cy| {
         iterate_point_raw(&self.set, zx, zy, cx, cy, self.max_iterations, self.power) as f64
       },
@@ -101,8 +99,8 @@ impl Fractal {
     let center_x = self.center_x;
     let center_y = self.center_y;
     let scale = self.scale;
-    let real = self.real;
-    let imag = self.imag;
+    let real = self.julia_constant.0;
+    let imag = self.julia_constant.1;
     let set = self.set.clone();
     let palette_fn = self.palettes[self.current_palette];
     let max_iterations = self.max_iterations;
