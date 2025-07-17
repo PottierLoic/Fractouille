@@ -54,7 +54,6 @@ impl App {
 
   fn handle_input(&mut self) -> Result<()> {
     let timeout = Duration::from_secs_f32(1.0 / 60.0);
-    let mut save_requested = false;
     if event::poll(timeout)? {
       if let Event::Key(key) = event::read()? {
         if key.kind != KeyEventKind::Press {
@@ -107,7 +106,6 @@ impl App {
                 Set::BurningShip => Set::Mandelbrot,
               }
             }
-            KeyCode::Char('g') => save_requested = true,
             _ => {}
           }
         }
@@ -115,9 +113,6 @@ impl App {
           self.fractal.colors.clear();
         }
       }
-    }
-    if save_requested {
-      self.fractal.save_screenshot();
     }
     if self.quit_requested {
       self.state = AppState::Quit;
