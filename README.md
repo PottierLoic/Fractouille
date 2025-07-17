@@ -22,5 +22,5 @@ TODO:
 
 Here are some screenshots:
 ![](museum/mandelbrot.png)
+![](museum/julia_1752786293_x0.025686664181739313_y0_z3.797498335832415_p6.png)
 ![](museum/base_ship.png)
-![](museum/screenshot_burningship_1752007049.png)
