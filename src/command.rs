@@ -15,9 +15,7 @@ pub enum Command {
   Iterations(u32),
   Zoom(f64),
 
-  Mandelbrot,
-  Julia,
-  BurningShip,
+  Set(String),
 
   Unknown(String),
 }
@@ -144,9 +142,19 @@ impl CommandProcessor {
           Err(_) => Command::Unknown(format!("Invalid zoom factor: {}", parts[1])),
         }
       }
-      "mandelbrot" => Command::Mandelbrot,
-      "julia" => Command::Julia,
-      "burningship" => Command::BurningShip,
+      "set" => {
+        if parts.len() != 2 {
+          Command::Unknown(format!(
+            "Usage: set <set>. Got {} arguments",
+            parts.len() - 1
+          ))
+        } else if parts[1] == "mandelbrot" || parts[1] == "julia" || parts[1] == "burningship" {
+          Command::Set(parts[1].to_string())
+        } else {
+          Command::Unknown(format!("Unknown set: {}", parts[1]))
+        }
+      }
+
       cmd => Command::Unknown(format!("Unknown command: {}", cmd)),
     }
   }
@@ -202,20 +210,15 @@ impl CommandProcessor {
         app.fractal.need_render = true;
         Ok(format!("Zoomed by factor of {}", factor))
       }
-      Command::Mandelbrot => {
-        app.fractal.set = crate::fractal::Set::Mandelbrot;
+      Command::Set(set) => {
+        match set.as_str() {
+          "mandelbrot" => app.fractal.set = crate::fractal::Set::Mandelbrot,
+          "julia" => app.fractal.set = crate::fractal::Set::Julia,
+          "burningship" => app.fractal.set = crate::fractal::Set::BurningShip,
+          &_ => (),
+        }
         app.fractal.need_render = true;
-        Ok("Switched to Mandelbrot set".to_string())
-      }
-      Command::Julia => {
-        app.fractal.set = crate::fractal::Set::Julia;
-        app.fractal.need_render = true;
-        Ok("Switched to Julia set".to_string())
-      }
-      Command::BurningShip => {
-        app.fractal.set = crate::fractal::Set::BurningShip;
-        app.fractal.need_render = true;
-        Ok("Switched to Burning Ship fractal".to_string())
+        Ok(format!("Switched to {} set", set).to_string())
       }
       Command::Unknown(msg) => Ok(msg),
     }
