@@ -6,7 +6,7 @@ use color_eyre::Result;
 pub enum Command {
   Move(f64, f64, Option<f64>),
   Reset,
-  Screenshot,
+  Screenshot(Option<u32>, Option<u32>),
   Help,
   Quit,
 
@@ -64,7 +64,21 @@ impl CommandProcessor {
         Command::Move(x, y, zoom)
       }
       "reset" => Command::Reset,
-      "screenshot" => Command::Screenshot,
+      "screenshot" => {
+        if parts.len() == 3 {
+          let width = match parts[1].parse::<u32>() {
+            Ok(val) => val,
+            Err(_) => return Command::Unknown(format!("Invalid width: {}", parts[1])),
+          };
+          let height = match parts[2].parse::<u32>() {
+            Ok(val) => val,
+            Err(_) => return Command::Unknown(format!("Invalid height: {}", parts[2])),
+          };
+          Command::Screenshot(Some(width), Some(height))
+        } else {
+          Command::Screenshot(None, None)
+        }
+      }
       "h" => Command::Help,
       "help" => Command::Help,
       "q" => Command::Quit,
@@ -153,8 +167,8 @@ impl CommandProcessor {
         app.fractal.need_render = true;
         Ok("Fractal reset to default state".to_string())
       }
-      Command::Screenshot => {
-        app.fractal.save_screenshot();
+      Command::Screenshot(width, height) => {
+        app.fractal.save_screenshot(width, height);
         Ok("Screenshot saved".to_string())
       }
       Command::Help => {

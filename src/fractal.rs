@@ -77,10 +77,11 @@ impl Fractal {
       .collect();
   }
 
-  pub fn save_screenshot(&self) {
+  pub fn save_screenshot(&self, width: Option<u32>, height: Option<u32>) {
     let fractal = self.clone();
+    let width = width.unwrap_or(1920);
+    let height = height.unwrap_or(1080);
     thread::spawn(move || {
-      let (width, height) = (1920, 1080);
       let mut img = RgbImage::new(width, height);
       let colors = generate_image(&fractal, width, height, true);
 
