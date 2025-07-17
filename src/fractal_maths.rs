@@ -2,7 +2,7 @@ use crate::fractal::{Fractal, Set};
 use crate::palettes::{PALETTES, PaletteFn};
 use image::Rgb;
 
-pub fn colorize(iter: f64, max_iter: u32, palette: PaletteFn) -> Rgb<u8> {
+fn colorize(iter: f64, max_iter: u32, palette: PaletteFn) -> Rgb<u8> {
   let (r, g, b) = if iter >= max_iter as f64 {
     (0, 0, 0)
   } else {
@@ -58,7 +58,7 @@ fn iterate_point(
   (i, zx, zy)
 }
 
-pub fn iterate_point_raw(
+fn iterate_point_raw(
   set: &Set,
   zx: f64,
   zy: f64,
@@ -71,7 +71,7 @@ pub fn iterate_point_raw(
   i
 }
 
-pub fn iterate_point_smooth(
+fn iterate_point_smooth(
   set: &Set,
   zx: f64,
   zy: f64,

@@ -1,6 +1,6 @@
 pub type PaletteFn = fn(t: f64) -> (u8, u8, u8);
 
-pub fn default_palette(t: f64) -> (u8, u8, u8) {
+fn default_palette(t: f64) -> (u8, u8, u8) {
   (
     (9.0 * (1.0 - t) * t * t * t * 255.0) as u8,
     (15.0 * (1.0 - t).powi(2) * t * t * 255.0) as u8,
@@ -8,7 +8,7 @@ pub fn default_palette(t: f64) -> (u8, u8, u8) {
   )
 }
 
-pub fn fire_palette(t: f64) -> (u8, u8, u8) {
+fn fire_palette(t: f64) -> (u8, u8, u8) {
   (
     (255.0 * t) as u8,
     (255.0 * t.powf(0.5) * (1.0 - t)) as u8,
@@ -16,7 +16,7 @@ pub fn fire_palette(t: f64) -> (u8, u8, u8) {
   )
 }
 
-pub fn rainbow_palette(t: f64) -> (u8, u8, u8) {
+fn rainbow_palette(t: f64) -> (u8, u8, u8) {
   (
     (127.5 * (1.0 + (6.0 * t).sin())) as u8,
     (127.5 * (1.0 + (6.0 * t + 2.0).sin())) as u8,
@@ -24,7 +24,7 @@ pub fn rainbow_palette(t: f64) -> (u8, u8, u8) {
   )
 }
 
-pub fn ocean_palette(t: f64) -> (u8, u8, u8) {
+fn ocean_palette(t: f64) -> (u8, u8, u8) {
   (
     (20.0 * (1.0 - t)) as u8,
     (80.0 + 120.0 * t) as u8,
@@ -32,12 +32,12 @@ pub fn ocean_palette(t: f64) -> (u8, u8, u8) {
   )
 }
 
-pub fn grayscale_palette(t: f64) -> (u8, u8, u8) {
+fn grayscale_palette(t: f64) -> (u8, u8, u8) {
   let shade = (255.0 * t) as u8;
   (shade, shade, shade)
 }
 
-pub fn electric_palette(t: f64) -> (u8, u8, u8) {
+fn electric_palette(t: f64) -> (u8, u8, u8) {
   (
     (100.0 * (1.0 - t)) as u8,
     (200.0 * t) as u8,

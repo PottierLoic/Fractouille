@@ -3,7 +3,7 @@ use crate::fractal::Fractal;
 use color_eyre::Result;
 
 #[derive(Debug)]
-pub enum Command {
+enum Command {
   Move(f64, f64, Option<f64>),
   Reset,
   Screenshot(Option<u32>, Option<u32>),
@@ -23,7 +23,7 @@ pub enum Command {
 pub struct CommandProcessor;
 
 impl CommandProcessor {
-  pub fn parse(command: &str) -> Command {
+  fn parse(command: &str) -> Command {
     let parts: Vec<&str> = command.split_whitespace().collect();
 
     if parts.is_empty() {
