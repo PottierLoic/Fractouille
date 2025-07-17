@@ -143,7 +143,10 @@ impl Fractal {
         Set::BurningShip => "burningship",
       };
       img
-        .save(format!("screenshot_{}_{}.png", name, timestamp))
+        .save(format!(
+          "{}_{}_x{}_y{}_z{}_p{}.png",
+          name, timestamp, real, imag, scale, power
+        ))
         .unwrap();
     });
   }
