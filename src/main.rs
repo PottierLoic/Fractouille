@@ -127,7 +127,7 @@ impl App {
 impl Widget for &mut App {
   fn render(self, area: Rect, buf: &mut Buffer) {
     let layout = if self.show_extended_menu {
-      Layout::vertical([Length(5), Min(0), Length(1)])
+      Layout::vertical([Length(4), Min(0), Length(1)])
     } else {
       Layout::vertical([Length(1), Min(0), Length(1)])
     };
@@ -137,27 +137,31 @@ impl Widget for &mut App {
     if self.show_extended_menu {
       let extended_info = vec![
         format!(
-          "Fractouille // Set: {:?} | Palette: {} | Zoom: {:.2}x | Iter: {}",
-          self.fractal.set,
-          self.fractal.current_palette,
+          "Fractouille - {:?} | Palette: {}",
+          self.fractal.set, self.fractal.current_palette
+        ),
+        format!(
+          "Position: ({:.6}, {:.6}) | Zoom: {:.2}x | Iterations: {} | Power: {:.2}",
+          self.fractal.center_x,
+          self.fractal.center_y,
           self.fractal.scale,
-          self.fractal.max_iterations
+          self.fractal.max_iterations,
+          self.fractal.power
         ),
-        "press G to take a high quality screenshot !".to_string(),
-        "WASD/Arrows - Move around | +/- - Zoom in/out".to_string(),
-        format!(
-          "Current position: ({:.6}, {:.6})",
-          self.fractal.center_x, self.fractal.center_y
-        ),
-        format!(
-          "Enter - Switch set ({:?}) | R/F - Iter ({}) | Space - Next palette",
-          self.fractal.set, self.fractal.max_iterations
-        ),
-        if self.command_mode {
-          "ESC - Exit command mode".to_string()
+        if self.fractal.set == Set::Julia {
+          format!(
+            "Julia Constant: {:.6} + {:.6}",
+            self.fractal.julia_constant.0, self.fractal.julia_constant.1
+          )
         } else {
           "".to_string()
         },
+        if self.command_mode {
+          "Command Mode: ACTIVE (ESC to exit) | Type 'commands' for command list"
+        } else {
+          "Press ':' to enter command mode | See COMMANDS.md for available commands"
+        }
+        .to_string(),
       ];
       Text::from(extended_info.join("\n")).render(menu, buf);
     } else {
