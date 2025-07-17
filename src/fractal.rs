@@ -29,7 +29,6 @@ pub struct Fractal {
   pub set: Set,
   pub julia_constant: (f64, f64),
   pub power: f64,
-  pub step: f64,
 }
 
 impl Default for Fractal {
@@ -46,7 +45,6 @@ impl Default for Fractal {
       set: Set::Mandelbrot,
       julia_constant: (-0.5251993, -0.5251993),
       power: 2.0,
-      step: 0.01,
     }
   }
 }
