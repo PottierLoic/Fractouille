@@ -25,6 +25,7 @@ struct App {
   command_mode: bool,
   command_string: String,
   quit_requested: bool,
+  command_result: String,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -71,7 +72,8 @@ impl App {
             }
             KeyCode::Enter => {
               self.command_mode = false;
-              CommandProcessor::execute(self)?;
+              self.command_result =
+                CommandProcessor::execute(self).unwrap_or_else(|err| format!("Error: {}", err));
               self.command_string.clear();
             }
             KeyCode::Char(c) => {
@@ -181,6 +183,8 @@ impl Widget for &mut App {
 
     if self.command_mode {
       Text::from(format!(":{}", self.command_string)).render(cmd_bar, buf);
+    } else {
+      Text::from(format!("{}", self.command_result)).render(cmd_bar, buf);
     }
   }
 }

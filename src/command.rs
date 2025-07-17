@@ -40,17 +40,14 @@ impl CommandProcessor {
             parts.len() - 1
           ));
         }
-
         let x = match parts[1].parse::<f64>() {
           Ok(val) => val,
           Err(_) => return Command::Unknown(format!("Invalid x coordinate: {}", parts[1])),
         };
-
         let y = match parts[2].parse::<f64>() {
           Ok(val) => val,
           Err(_) => return Command::Unknown(format!("Invalid y coordinate: {}", parts[2])),
         };
-
         let zoom = match parts[3].parse::<f64>() {
           Ok(val) => {
             if val <= 0.0 {
@@ -60,7 +57,6 @@ impl CommandProcessor {
           }
           Err(_) => return Command::Unknown(format!("Invalid zoom level: {}", parts[3])),
         };
-
         Command::Move(x, y, zoom)
       }
       "reset" => Command::Reset,
@@ -69,7 +65,6 @@ impl CommandProcessor {
       "help" => Command::Help,
       "q" => Command::Quit,
       "quit" => Command::Quit,
-
       "complex" => {
         if parts.len() != 3 {
           return Command::Unknown(format!(
@@ -77,20 +72,16 @@ impl CommandProcessor {
             parts.len() - 1
           ));
         }
-
         let real = match parts[1].parse::<f64>() {
           Ok(val) => val,
           Err(_) => return Command::Unknown(format!("Invalid real part: {}", parts[1])),
         };
-
         let imag = match parts[2].parse::<f64>() {
           Ok(val) => val,
           Err(_) => return Command::Unknown(format!("Invalid imaginary part: {}", parts[2])),
         };
-
         Command::Complex(real, imag)
       }
-
       "power" => {
         if parts.len() != 2 {
           return Command::Unknown(format!(
@@ -98,13 +89,11 @@ impl CommandProcessor {
             parts.len() - 1
           ));
         }
-
         match parts[1].parse::<f64>() {
           Ok(val) => Command::Power(val),
           Err(_) => Command::Unknown(format!("Invalid power value: {}", parts[1])),
         }
       }
-
       "iterations" => {
         if parts.len() != 2 {
           return Command::Unknown(format!(
@@ -118,7 +107,6 @@ impl CommandProcessor {
           Err(_) => Command::Unknown(format!("Invalid iterations count: {}", parts[1])),
         }
       }
-
       "zoom" => {
         if parts.len() != 2 {
           return Command::Unknown(format!(
@@ -138,11 +126,9 @@ impl CommandProcessor {
           Err(_) => Command::Unknown(format!("Invalid zoom factor: {}", parts[1])),
         }
       }
-
       "mandelbrot" => Command::Mandelbrot,
       "julia" => Command::Julia,
       "burningship" => Command::BurningShip,
-
       cmd => Command::Unknown(format!("Unknown command: {}", cmd)),
     }
   }
@@ -173,7 +159,6 @@ impl CommandProcessor {
         app.quit_requested = true;
         Ok("Bye!".to_string())
       }
-
       Command::Complex(real, imag) => {
         app.fractal.julia_constant = (real, imag);
         app.fractal.need_render = true;
@@ -182,43 +167,36 @@ impl CommandProcessor {
           real, imag
         ))
       }
-
       Command::Power(power) => {
         app.fractal.power = power;
         app.fractal.need_render = true;
         Ok(format!("Fractal power updated to {}", power))
       }
-
       Command::Iterations(count) => {
         app.fractal.max_iterations = count;
         app.fractal.need_render = true;
         Ok(format!("Max iterations updated to {}", count))
       }
-
       Command::Zoom(factor) => {
         app.fractal.scale *= factor;
         app.fractal.need_render = true;
         Ok(format!("Zoomed by factor of {}", factor))
       }
-
       Command::Mandelbrot => {
         app.fractal.set = crate::fractal::Set::Mandelbrot;
         app.fractal.need_render = true;
         Ok("Switched to Mandelbrot set".to_string())
       }
-
       Command::Julia => {
         app.fractal.set = crate::fractal::Set::Julia;
         app.fractal.need_render = true;
         Ok("Switched to Julia set".to_string())
       }
-
       Command::BurningShip => {
         app.fractal.set = crate::fractal::Set::BurningShip;
         app.fractal.need_render = true;
         Ok("Switched to Burning Ship fractal".to_string())
       }
-
       Command::Unknown(msg) => Ok(msg),
     }
   }
