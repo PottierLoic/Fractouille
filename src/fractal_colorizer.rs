@@ -115,8 +115,7 @@ pub fn generate_image<T: Clone, I: Fn(f64, f64, f64, f64) -> f64, C: Fn(f64) -> 
   center_x: f64,
   center_y: f64,
   scale: f64,
-  real: f64,
-  imag: f64,
+  julia_constant: (f64, f64),
   iterate_fn: I,
   colorize: C,
 ) -> Vec<Vec<T>> {
@@ -139,7 +138,7 @@ pub fn generate_image<T: Clone, I: Fn(f64, f64, f64, f64) -> f64, C: Fn(f64) -> 
             Set::Julia => {
               let zx = left + x as f64 * vw / w as f64;
               let zy = top + y as f64 * vh / h as f64;
-              (zx, zy, real, imag)
+              (zx, zy, julia_constant.0, julia_constant.1)
             }
           };
 

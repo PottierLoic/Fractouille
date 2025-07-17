@@ -77,8 +77,7 @@ impl Fractal {
       self.center_x,
       self.center_y,
       self.scale,
-      self.julia_constant.0,
-      self.julia_constant.1,
+      self.julia_constant,
       |zx, zy, cx, cy| {
         iterate_point_raw(&self.set, zx, zy, cx, cy, self.max_iterations, self.power) as f64
       },
@@ -97,8 +96,7 @@ impl Fractal {
     let center_x = self.center_x;
     let center_y = self.center_y;
     let scale = self.scale;
-    let real = self.julia_constant.0;
-    let imag = self.julia_constant.1;
+    let julia_constant = self.julia_constant;
     let set = self.set.clone();
     let palette_fn = self.palettes[self.current_palette];
     let max_iterations = self.max_iterations;
@@ -116,8 +114,7 @@ impl Fractal {
         center_x,
         center_y,
         scale,
-        real,
-        imag,
+        julia_constant,
         |zx, zy, cx, cy| iterate_point_smooth(&set, zx, zy, cx, cy, max_iterations, power),
         colorize,
       );
@@ -141,7 +138,7 @@ impl Fractal {
       img
         .save(format!(
           "{}_{}_x{}_y{}_z{}_p{}.png",
-          name, timestamp, real, imag, scale, power
+          name, timestamp, center_x, center_y, scale, power
         ))
         .unwrap();
     });
