@@ -4,7 +4,7 @@ use color_eyre::Result;
 
 #[derive(Debug)]
 pub enum Command {
-  Move(f64, f64, f64),
+  Move(f64, f64, Option<f64>),
   Reset,
   Screenshot,
   Help,
@@ -34,7 +34,7 @@ impl CommandProcessor {
 
     match parts[0] {
       "move" => {
-        if parts.len() != 4 {
+        if parts.len() < 3 || parts.len() > 4 {
           return Command::Unknown(format!(
             "Usage: move <x> <y> <zoom>. Got {} arguments",
             parts.len() - 1
@@ -48,14 +48,18 @@ impl CommandProcessor {
           Ok(val) => val,
           Err(_) => return Command::Unknown(format!("Invalid y coordinate: {}", parts[2])),
         };
-        let zoom = match parts[3].parse::<f64>() {
-          Ok(val) => {
-            if val <= 0.0 {
-              return Command::Unknown("Zoom must be positive".to_string());
+        let zoom = if parts.len() == 4 {
+          match parts[3].parse::<f64>() {
+            Ok(val) => {
+              if val <= 0.0 {
+                return Command::Unknown("Zoom must be positive".to_string());
+              }
+              Some(val)
             }
-            val
+            Err(_) => return Command::Unknown(format!("Invalid zoom level: {}", parts[3])),
           }
-          Err(_) => return Command::Unknown(format!("Invalid zoom level: {}", parts[3])),
+        } else {
+          None
         };
         Command::Move(x, y, zoom)
       }
@@ -138,7 +142,9 @@ impl CommandProcessor {
       Command::Move(x, y, zoom) => {
         app.fractal.center_x = x;
         app.fractal.center_y = y;
-        app.fractal.scale = zoom;
+        if let Some(zoom) = zoom {
+          app.fractal.scale = zoom;
+        }
         app.fractal.need_render = true;
         Ok("Position and zoom updated".to_string())
       }
