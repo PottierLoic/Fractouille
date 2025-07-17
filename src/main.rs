@@ -179,7 +179,7 @@ impl Widget for &mut App {
     if self.command_mode {
       Text::from(format!(":{}", self.command_string)).render(cmd_bar, buf);
     } else {
-      Text::from(format!("{}", self.command_result)).render(cmd_bar, buf);
+      Text::from(self.command_result.to_string()).render(cmd_bar, buf);
     }
   }
 }
