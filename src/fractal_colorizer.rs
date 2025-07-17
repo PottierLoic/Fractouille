@@ -1,33 +1,14 @@
-use crate::fractal::Set;
-use crate::palettes::PaletteFn;
-use crate::utils::color_to_rgb;
+use crate::fractal::{Fractal, Set};
+use crate::palettes::{PALETTES, PaletteFn};
 use image::Rgb;
-use ratatui::style::Color;
 
-pub trait FractalColorizer<T> {
-  fn colorize(iter: f64, max_iter: u32, palette: PaletteFn) -> T;
-}
-
-impl FractalColorizer<Color> for Color {
-  fn colorize(iter: f64, max_iter: u32, palette: PaletteFn) -> Self {
-    if iter >= max_iter as f64 {
-      Color::Black
-    } else {
-      palette(iter / max_iter as f64)
-    }
-  }
-}
-
-impl FractalColorizer<Rgb<u8>> for Rgb<u8> {
-  fn colorize(iter: f64, max_iter: u32, palette: PaletteFn) -> Self {
-    let color = if iter >= max_iter as f64 {
-      Color::Black
-    } else {
-      palette(iter / max_iter as f64)
-    };
-    let (r, g, b) = color_to_rgb(&color);
-    Rgb([r, g, b])
-  }
+pub fn colorize(iter: f64, max_iter: u32, palette: PaletteFn) -> Rgb<u8> {
+  let (r, g, b) = if iter >= max_iter as f64 {
+    (0, 0, 0)
+  } else {
+    palette(iter / max_iter as f64)
+  };
+  Rgb([r, g, b])
 }
 
 fn iterate_point(
@@ -108,42 +89,62 @@ pub fn iterate_point_smooth(
   }
 }
 
-pub fn generate_image<T: Clone, I: Fn(f64, f64, f64, f64) -> f64, C: Fn(f64) -> T>(
-  set: &Set,
-  w: usize,
-  h: usize,
-  center_x: f64,
-  center_y: f64,
-  scale: f64,
-  julia_constant: (f64, f64),
-  iterate_fn: I,
-  colorize: C,
-) -> Vec<Vec<T>> {
-  let aspect = w as f64 / h as f64;
-  let vw = 3.5 / scale;
+pub fn generate_image(
+  fractal: &Fractal,
+  width: u32,
+  height: u32,
+  smooth: bool,
+) -> Vec<Vec<Rgb<u8>>> {
+  let aspect = width as f64 / height as f64;
+  let vw = 3.5 / fractal.scale;
   let vh = vw / aspect;
-  let left = center_x - vw / 2.0;
-  let top = center_y - vh / 2.0;
+  let left = fractal.center_x - vw / 2.0;
+  let top = fractal.center_y - vh / 2.0;
 
-  (0..h)
+  (0..height)
     .map(|y| {
-      (0..w)
+      (0..width)
         .map(|x| {
-          let (zx, zy, cx, cy) = match set {
+          let (zx, zy, cx, cy) = match fractal.set {
             Set::Mandelbrot | Set::BurningShip => {
-              let cx = left + x as f64 * vw / w as f64;
-              let cy = top + y as f64 * vh / h as f64;
+              let cx = left + x as f64 * vw / width as f64;
+              let cy = top + y as f64 * vh / height as f64;
               (0.0, 0.0, cx, cy)
             }
             Set::Julia => {
-              let zx = left + x as f64 * vw / w as f64;
-              let zy = top + y as f64 * vh / h as f64;
-              (zx, zy, julia_constant.0, julia_constant.1)
+              let zx = left + x as f64 * vw / width as f64;
+              let zy = top + y as f64 * vh / height as f64;
+              (zx, zy, fractal.julia_constant.0, fractal.julia_constant.1)
             }
           };
 
-          let iter = iterate_fn(zx, zy, cx, cy);
-          colorize(iter)
+          let iter = if smooth {
+            iterate_point_smooth(
+              &fractal.set,
+              zx,
+              zy,
+              cx,
+              cy,
+              fractal.max_iterations,
+              fractal.power,
+            )
+          } else {
+            iterate_point_raw(
+              &fractal.set,
+              zx,
+              zy,
+              cx,
+              cy,
+              fractal.max_iterations,
+              fractal.power,
+            ) as f64
+          };
+
+          colorize(
+            iter,
+            fractal.max_iterations,
+            PALETTES[fractal.current_palette],
+          )
         })
         .collect()
     })

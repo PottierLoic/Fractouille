@@ -1,8 +1,5 @@
-use crate::fractal_colorizer::FractalColorizer;
 use crate::fractal_colorizer::generate_image;
-use crate::fractal_colorizer::{iterate_point_raw, iterate_point_smooth};
-use crate::palettes::{PaletteFn, all_palettes};
-use image::{Rgb, RgbImage};
+use image::RgbImage;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Position, Rect};
 use ratatui::prelude::{Color, Widget};
@@ -16,7 +13,7 @@ pub enum Set {
   BurningShip,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Fractal {
   pub colors: Vec<Vec<Color>>,
   pub center_x: f64,
@@ -24,7 +21,6 @@ pub struct Fractal {
   pub scale: f64,
   pub max_iterations: u32,
   pub need_render: bool,
-  pub palettes: Vec<PaletteFn>,
   pub current_palette: usize,
   pub set: Set,
   pub julia_constant: (f64, f64),
@@ -40,7 +36,6 @@ impl Default for Fractal {
       scale: 1.0,
       max_iterations: 100,
       need_render: true,
-      palettes: all_palettes(),
       current_palette: 0,
       set: Set::Mandelbrot,
       julia_constant: (-0.5251993, -0.5251993),
@@ -70,54 +65,24 @@ impl Fractal {
     if self.colors.len() == h && self.colors[0].len() == w && !self.need_render {
       return;
     }
-    let raw_colors = generate_image(
-      &self.set,
-      w,
-      h,
-      self.center_x,
-      self.center_y,
-      self.scale,
-      self.julia_constant,
-      |zx, zy, cx, cy| {
-        iterate_point_raw(&self.set, zx, zy, cx, cy, self.max_iterations, self.power) as f64
-      },
-      |iter| {
-        <Color as FractalColorizer<Color>>::colorize(
-          iter,
-          self.max_iterations,
-          self.palettes[self.current_palette],
-        )
-      },
-    );
-    self.colors = raw_colors;
+    let raw_colors = generate_image(self, w as u32, h as u32, false);
+    self.colors = raw_colors
+      .into_iter()
+      .map(|row| {
+        row
+          .into_iter()
+          .map(|rgb| Color::Rgb(rgb[0], rgb[1], rgb[2]))
+          .collect()
+      })
+      .collect();
   }
 
   pub fn save_screenshot(&self) {
-    let center_x = self.center_x;
-    let center_y = self.center_y;
-    let scale = self.scale;
-    let julia_constant = self.julia_constant;
-    let set = self.set.clone();
-    let palette_fn = self.palettes[self.current_palette];
-    let max_iterations = self.max_iterations;
-    let power = self.power;
-
+    let fractal = self.clone();
     thread::spawn(move || {
-      let (w, h) = (1920, 1080);
-      let mut img = RgbImage::new(w, h);
-
-      let colorize = move |iter| Rgb::<u8>::colorize(iter, max_iterations, palette_fn);
-      let colors = generate_image(
-        &set,
-        w as usize,
-        h as usize,
-        center_x,
-        center_y,
-        scale,
-        julia_constant,
-        |zx, zy, cx, cy| iterate_point_smooth(&set, zx, zy, cx, cy, max_iterations, power),
-        colorize,
-      );
+      let (width, height) = (1920, 1080);
+      let mut img = RgbImage::new(width, height);
+      let colors = generate_image(&fractal, width, height, true);
 
       for (y, row) in colors.iter().enumerate() {
         for (x, pixel) in row.iter().enumerate() {
@@ -130,7 +95,7 @@ impl Fractal {
         .unwrap()
         .as_secs();
 
-      let name = match set {
+      let name = match fractal.set {
         Set::Mandelbrot => "mandelbrot",
         Set::Julia => "julia",
         Set::BurningShip => "burningship",
@@ -138,7 +103,7 @@ impl Fractal {
       img
         .save(format!(
           "{}_{}_x{}_y{}_z{}_p{}.png",
-          name, timestamp, center_x, center_y, scale, power
+          name, timestamp, fractal.center_x, fractal.center_y, fractal.scale, fractal.power
         ))
         .unwrap();
     });

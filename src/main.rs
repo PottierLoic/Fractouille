@@ -2,10 +2,10 @@ mod command;
 mod fractal;
 mod fractal_colorizer;
 mod palettes;
-mod utils;
 
 use crate::command::CommandProcessor;
 use crate::fractal::{Fractal, Set};
+use crate::palettes::PALETTES;
 use color_eyre::Result;
 use ratatui::{
   DefaultTerminal,
@@ -97,7 +97,7 @@ impl App {
             KeyCode::Char('d') | KeyCode::Right => f.center_x += step,
             KeyCode::Char('w') | KeyCode::Up => f.center_y -= step,
             KeyCode::Char('s') | KeyCode::Down => f.center_y += step,
-            KeyCode::Char(' ') => f.current_palette = (f.current_palette + 1) % f.palettes.len(),
+            KeyCode::Char(' ') => f.current_palette = (f.current_palette + 1) % PALETTES.len(),
             KeyCode::Enter => {
               f.set = match f.set {
                 Set::Mandelbrot => Set::Julia,
