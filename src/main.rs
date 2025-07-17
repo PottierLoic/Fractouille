@@ -135,7 +135,7 @@ impl Widget for &mut App {
     let [menu, main, cmd_bar] = layout.areas(area);
 
     if self.show_extended_menu {
-      let extended_info = vec![
+      let extended_info = [
         format!(
           "Fractouille - {:?} | Palette: {}",
           self.fractal.set, self.fractal.current_palette

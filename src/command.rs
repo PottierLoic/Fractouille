@@ -26,7 +26,7 @@ pub struct CommandProcessor;
 
 impl CommandProcessor {
   pub fn parse(command: &str) -> Command {
-    let parts: Vec<&str> = command.trim().split_whitespace().collect();
+    let parts: Vec<&str> = command.split_whitespace().collect();
 
     if parts.is_empty() {
       return Command::Unknown("Empty command".to_string());
@@ -148,7 +148,7 @@ impl CommandProcessor {
   }
 
   pub fn execute(app: &mut App) -> Result<String> {
-    match Self::parse(&*app.command_string) {
+    match Self::parse(&app.command_string) {
       Command::Move(x, y, zoom) => {
         app.fractal.center_x = x;
         app.fractal.center_y = y;
