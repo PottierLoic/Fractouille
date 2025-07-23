@@ -4,11 +4,24 @@
 
 Fractouille is a simple fractal explorer running in your terminal.
 
-You can find all the keybinds in the title bar!
-
 It is better to use cargo build --release to build it, as it is a bit slow otherwise.
 
-TODO:
+## Keybinds
+
+- `wasd`: Move around
+- `q`: quit fractouille
+- `r/f`: increase/decrease max iterations
+- `-/`: decrease/increase zoom level
+- `space`: change color palette
+- `enter`: change set
+- `:`: enter command mode
+- `esc`: exit command mode
+
+## Command mode
+
+Pressing `:` enters command mode. A list of all available commands can be found by in the `COMMANDS.md` file.
+
+## TODO:
 - [x] Mandelbrot
 - [x] Julia
 - [x] Burning Ship
@@ -16,7 +29,7 @@ TODO:
 - [x] Smooth coloring on screenshots
 - [ ] Have deep zoom
 - [ ] Saving location
-- [ ] Auto move / zoom to saved locations
+- [x] Auto move / zoom to saved locations
 - [ ] Make more and better looking color palettes
 - [x] Being able to change the power, not only quadratic
 
