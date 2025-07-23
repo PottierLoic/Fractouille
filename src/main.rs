@@ -90,6 +90,7 @@ impl App {
               self.command_mode = true;
               self.command_string.clear();
             }
+            KeyCode::Char('q') => self.quit_requested = true,
             KeyCode::Char('+') | KeyCode::Char('=') => f.scale *= 1.1,
             KeyCode::Char('-') => f.scale /= 1.1,
             KeyCode::Char('r') => f.max_iterations += 1,
@@ -124,7 +125,7 @@ impl App {
 impl Widget for &mut App {
   fn render(self, area: Rect, buf: &mut Buffer) {
     let layout = if self.show_extended_menu {
-      Layout::vertical([Length(4), Min(0), Length(1)])
+      Layout::vertical([Length(5), Min(0), Length(1)])
     } else {
       Layout::vertical([Length(1), Min(0), Length(1)])
     };
@@ -153,6 +154,7 @@ impl Widget for &mut App {
         } else {
           "".to_string()
         },
+        "wasd to move | r/f to change max iteration | -/+ to zoom | q to quit".to_string(),
         if self.command_mode {
           "Command Mode: ACTIVE (ESC to exit) | Type 'commands' for command list"
         } else {
