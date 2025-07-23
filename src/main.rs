@@ -90,6 +90,7 @@ impl App {
               self.command_mode = true;
               self.command_string.clear();
             }
+            KeyCode::Char('q') => self.quit_requested = true,
             KeyCode::Char('+') | KeyCode::Char('=') => f.scale *= 1.1,
             KeyCode::Char('-') => f.scale /= 1.1,
             KeyCode::Char('r') => f.max_iterations += 1,
