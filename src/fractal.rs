@@ -1,8 +1,11 @@
 use crate::fractal_maths::generate_image;
+use color_eyre::eyre::Result;
 use image::RgbImage;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Position, Rect};
 use ratatui::prelude::{Color, Widget};
+use std::fs;
+use std::path::PathBuf;
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -77,11 +80,25 @@ impl Fractal {
       .collect();
   }
 
-  pub fn save_screenshot(&self, width: Option<u32>, height: Option<u32>) {
+  pub fn save_screenshot(
+    &self,
+    width: Option<u32>,
+    height: Option<u32>,
+  ) -> Result<PathBuf, String> {
     let fractal = self.clone();
     let width = width.unwrap_or(1920);
     let height = height.unwrap_or(1080);
-    thread::spawn(move || {
+
+    let base_dir = dirs::picture_dir()
+      .or_else(dirs::home_dir)
+      .ok_or_else(|| "Could not determine user directory".to_string())?;
+
+    let screenshots_dir = base_dir.join("fractouille_screenshots");
+    fs::create_dir_all(&screenshots_dir).map_err(|e| e.to_string())?;
+
+    let thread_screenshots_dir = screenshots_dir.clone();
+
+    thread::spawn(move || -> Result<PathBuf> {
       let mut img = RgbImage::new(width, height);
       let colors = generate_image(&fractal, width, height, true);
 
@@ -93,7 +110,7 @@ impl Fractal {
 
       let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .unwrap()
+        .unwrap_or_default()
         .as_secs();
 
       let name = match fractal.set {
@@ -101,12 +118,20 @@ impl Fractal {
         Set::Julia => "julia",
         Set::BurningShip => "burningship",
       };
+
+      let filename = format!(
+        "{}_{}_x{}_y{}_z{}_p{}.png",
+        name, timestamp, fractal.center_x, fractal.center_y, fractal.scale, fractal.power
+      );
+
+      let file_path = thread_screenshots_dir.join(&filename);
       img
-        .save(format!(
-          "{}_{}_x{}_y{}_z{}_p{}.png",
-          name, timestamp, fractal.center_x, fractal.center_y, fractal.scale, fractal.power
-        ))
-        .unwrap();
+        .save(&file_path)
+        .map_err(|e| color_eyre::eyre::eyre!("Failed to save screenshot: {}", e))?;
+
+      Ok(file_path)
     });
+
+    Ok(screenshots_dir)
   }
 }

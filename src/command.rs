@@ -175,10 +175,10 @@ impl CommandProcessor {
         app.fractal.need_render = true;
         Ok("Fractal reset to default state".to_string())
       }
-      Command::Screenshot(width, height) => {
-        app.fractal.save_screenshot(width, height);
-        Ok("Screenshot saved".to_string())
-      }
+      Command::Screenshot(width, height) => match app.fractal.save_screenshot(width, height) {
+        Ok(path) => Ok(format!("Screenshot saved in {}", path.display())),
+        Err(e) => Ok(format!("Failed to save screenshot: {}", e)),
+      },
       Command::Help => {
         app.show_extended_menu = !app.show_extended_menu;
         Ok("Menu extended".to_string())
