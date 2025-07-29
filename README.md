@@ -6,6 +6,11 @@ Fractouille is a simple fractal explorer running in your terminal.
 
 It is better to use cargo build --release to build it, as it is a bit slow otherwise.
 
+## Usage
+
+Simply run `cargo run --release` and you should be good to go.  
+You can also install it using `cargo install --path .` then run it using `fractouille`.
+
 ## Keybinds
 
 - `wasd`: Move around
