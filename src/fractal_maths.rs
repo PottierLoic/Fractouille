@@ -1,6 +1,7 @@
 use crate::fractal::{Fractal, Set};
 use crate::palettes::{PALETTES, PaletteFn};
 use image::Rgb;
+use rayon::prelude::*;
 
 fn colorize(iter: f64, max_iter: u32, palette: PaletteFn) -> Rgb<u8> {
   let (r, g, b) = if iter >= max_iter as f64 {
@@ -102,6 +103,7 @@ pub fn generate_image(
   let top = fractal.center_y - vh / 2.0;
 
   (0..height)
+    .into_par_iter()
     .map(|y| {
       (0..width)
         .map(|x| {

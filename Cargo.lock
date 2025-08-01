@@ -504,6 +504,7 @@ dependencies = [
  "dirs",
  "image",
  "ratatui",
+ "rayon",
 ]
 
 [[package]]
