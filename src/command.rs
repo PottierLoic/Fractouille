@@ -146,7 +146,7 @@ impl CommandProcessor {
       "zoom" => {
         if parts.len() != 2 {
           return Command::Unknown(format!(
-            "Usage: zoom <factor>. Got {} arguments",
+            "Usage: zoom <zoom_level>. Got {} arguments",
             parts.len() - 1
           ));
         }
@@ -264,10 +264,10 @@ impl CommandProcessor {
         app.fractal.need_render = true;
         Ok(format!("Max iterations updated to {}", count))
       }
-      Command::Zoom(factor) => {
-        app.fractal.scale *= factor;
+      Command::Zoom(zoom_level) => {
+        app.fractal.scale = zoom_level;
         app.fractal.need_render = true;
-        Ok(format!("Zoomed by factor of {}", factor))
+        Ok(format!("Zoomed to {}", zoom_level))
       }
       Command::Set(set) => {
         match set.as_str() {

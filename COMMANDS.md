@@ -29,11 +29,11 @@ This is a list of all the available commands in Fractouille. They can be entered
 - `iterations <count>`
   Set the maximum number of iterations for fractal computation. Higher values increase detail but may slow rendering.
 
-- `zoom <factor>`
-  Sets the zoom factor for the fractal view.
+- `zoom <zoom_level>`
+  Sets the zoom level for the fractal view.
 
 - `set <type>`
-  Sets the fractal set type. Available types: mandelbrot, julia, burningship
+  Sets the fractal set type. Available types: mandelbrot, julia, burningship, phoenix
 
 - `record <width> <height> <start> <end> <speed>`
   Record frames of specified size from `start` to `end` zoom level. Can then be used to make a video using external tools.
