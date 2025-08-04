@@ -9,14 +9,14 @@ const SMOOTH_OFFSET: f64 = 1.0;
 const LOG2: f64 = std::f64::consts::LN_2;
 
 trait FractalIterator: Send + Sync {
-  fn iterate(&self, z: Complex, c: Complex) -> Complex;
+  fn iterate(&self, z: Complex, z_prev: Complex, c: Complex) -> Complex;
 }
 
 struct MandelbrotIterator { power: f64 }
 struct BurningShipIterator;
 
 impl FractalIterator for MandelbrotIterator {
-  fn iterate(&self, z: Complex, c: Complex) -> Complex {
+  fn iterate(&self, z: Complex, _z_prev: Complex, c: Complex) -> Complex {
     if self.power == 2.0 {
       z.square().add(c)
     } else {
@@ -26,7 +26,7 @@ impl FractalIterator for MandelbrotIterator {
 }
 
 impl FractalIterator for BurningShipIterator {
-  fn iterate(&self, z: Complex, c: Complex) -> Complex {
+  fn iterate(&self, z: Complex, _z_prev: Complex, c: Complex) -> Complex {
     let abs_z = z.abs();
     Complex {
       re: abs_z.re * abs_z.re - abs_z.im * abs_z.im,
@@ -46,16 +46,18 @@ fn colorize(iter: f64, max_iter: u32, palette: PaletteFn) -> Rgb<u8> {
 
 fn iterate_point(
   iterator: &dyn FractalIterator,
-  z: Complex,
+  mut z: Complex,
   c: Complex,
   max_iterations: u32,
   smooth: bool,
 ) -> f64 {
-  let mut z = z;
+  let mut z_prev = Complex::new(0.0, 0.0);
   let mut i = 0;
 
   while z.abs_sq() <= ESCAPE_RADIUS_SQ && i < max_iterations {
-    z = iterator.iterate(z, c);
+    let temp_z = z;
+    z = iterator.iterate(z, z_prev, c);
+    z_prev = temp_z;
     i += 1;
   }
 
@@ -66,6 +68,7 @@ fn iterate_point(
     i as f64
   }
 }
+
 pub fn generate_image(
   fractal: &Fractal,
   width: u32,
@@ -78,7 +81,7 @@ pub fn generate_image(
   let left = fractal.z.re - vw / 2.0;
   let top = fractal.z.im - vh / 2.0;
 
-  let iterator: Box<dyn FractalIterator> = match fractal.set {
+  let iterator: Box<dyn FractalIterator + Send + Sync> = match fractal.set {
     Set::Mandelbrot => Box::new(MandelbrotIterator { power: fractal.power }),
     Set::BurningShip => Box::new(BurningShipIterator),
     Set::Julia => Box::new(MandelbrotIterator { power: fractal.power }),
@@ -104,7 +107,6 @@ pub fn generate_image(
                 Complex::new(fractal.julia_constant.re, fractal.julia_constant.im),
               )
             }
-            Set::Phoenix => panic!("Phoenix not implemented"),
           };
 
           let iter = iterate_point(iterator.as_ref(), z, c, fractal.max_iterations, smooth);
