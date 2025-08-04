@@ -162,8 +162,7 @@ impl CommandProcessor {
   pub fn execute(app: &mut App) -> Result<String> {
     match Self::parse(&app.command_string) {
       Command::Move(x, y, zoom) => {
-        app.fractal.center_x = x;
-        app.fractal.center_y = y;
+        app.fractal.z = (x, y);
         if let Some(zoom) = zoom {
           app.fractal.scale = zoom;
         }

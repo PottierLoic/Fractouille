@@ -19,8 +19,7 @@ pub enum Set {
 #[derive(Debug, Clone)]
 pub struct Fractal {
   pub colors: Vec<Vec<Color>>,
-  pub center_x: f64,
-  pub center_y: f64,
+  pub z: (f64, f64),
   pub scale: f64,
   pub max_iterations: u32,
   pub need_render: bool,
@@ -34,8 +33,7 @@ impl Default for Fractal {
   fn default() -> Self {
     Self {
       colors: vec![],
-      center_x: -0.5,
-      center_y: 0.0,
+      z: (-0.5, 0.0),
       scale: 1.0,
       max_iterations: 100,
       need_render: true,
@@ -121,7 +119,7 @@ impl Fractal {
 
       let filename = format!(
         "{}_{}_x{}_y{}_z{}_p{}.png",
-        name, timestamp, fractal.center_x, fractal.center_y, fractal.scale, fractal.power
+        name, timestamp, fractal.z.0, fractal.z.1, fractal.scale, fractal.power
       );
 
       let file_path = thread_screenshots_dir.join(&filename);

@@ -99,8 +99,8 @@ pub fn generate_image(
   let aspect = width as f64 / height as f64;
   let vw = 3.5 / fractal.scale;
   let vh = vw / aspect;
-  let left = fractal.center_x - vw / 2.0;
-  let top = fractal.center_y - vh / 2.0;
+  let left = fractal.z.0 - vw / 2.0;
+  let top = fractal.z.1 - vh / 2.0;
 
   (0..height)
     .into_par_iter()
