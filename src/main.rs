@@ -95,10 +95,10 @@ impl App {
             KeyCode::Char('-') => f.scale /= 1.1,
             KeyCode::Char('r') => f.max_iterations += 1,
             KeyCode::Char('f') => f.max_iterations = f.max_iterations.saturating_sub(1),
-            KeyCode::Char('a') | KeyCode::Left => f.center_x -= step,
-            KeyCode::Char('d') | KeyCode::Right => f.center_x += step,
-            KeyCode::Char('w') | KeyCode::Up => f.center_y -= step,
-            KeyCode::Char('s') | KeyCode::Down => f.center_y += step,
+            KeyCode::Char('a') | KeyCode::Left => f.z.0 -= step,
+            KeyCode::Char('d') | KeyCode::Right => f.z.0 += step,
+            KeyCode::Char('w') | KeyCode::Up => f.z.1 -= step,
+            KeyCode::Char('s') | KeyCode::Down => f.z.1 += step,
             KeyCode::Char(' ') => f.current_palette = (f.current_palette + 1) % PALETTES.len(),
             KeyCode::Enter => {
               f.set = match f.set {
@@ -140,8 +140,8 @@ impl Widget for &mut App {
         ),
         format!(
           "Position: ({:.6}, {:.6}) | Zoom: {:.2}x | Iterations: {} | Power: {:.2}",
-          self.fractal.center_x,
-          self.fractal.center_y,
+          self.fractal.z.0,
+          self.fractal.z.1,
           self.fractal.scale,
           self.fractal.max_iterations,
           self.fractal.power
