@@ -14,6 +14,7 @@ pub enum Set {
   Mandelbrot,
   Julia,
   BurningShip,
+  Phoenix,
 }
 
 #[derive(Debug, Clone)]
@@ -26,6 +27,7 @@ pub struct Fractal {
   pub current_palette: usize,
   pub set: Set,
   pub julia_constant: (f64, f64),
+  pub phoenix_constant: (f64, f64),
   pub power: f64,
 }
 
@@ -40,6 +42,7 @@ impl Default for Fractal {
       current_palette: 0,
       set: Set::Mandelbrot,
       julia_constant: (-0.5251993, -0.5251993),
+      phoenix_constant: (-0.5251993, -0.5251993),
       power: 2.0,
     }
   }
@@ -115,6 +118,7 @@ impl Fractal {
         Set::Mandelbrot => "mandelbrot",
         Set::Julia => "julia",
         Set::BurningShip => "burningship",
+        Set::Phoenix => "phoenix",
       };
 
       let filename = format!(

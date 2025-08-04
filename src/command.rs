@@ -214,6 +214,7 @@ impl CommandProcessor {
           "mandelbrot" => app.fractal.set = crate::fractal::Set::Mandelbrot,
           "julia" => app.fractal.set = crate::fractal::Set::Julia,
           "burningship" => app.fractal.set = crate::fractal::Set::BurningShip,
+          "phoenix" => app.fractal.set = crate::fractal::Set::Phoenix,
           &_ => (),
         }
         app.fractal.need_render = true;

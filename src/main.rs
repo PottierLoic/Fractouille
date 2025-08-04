@@ -2,6 +2,7 @@ mod command;
 mod fractal;
 mod fractal_maths;
 mod palettes;
+mod complex;
 
 use crate::command::CommandProcessor;
 use crate::fractal::{Fractal, Set};
@@ -104,7 +105,8 @@ impl App {
               f.set = match f.set {
                 Set::Mandelbrot => Set::Julia,
                 Set::Julia => Set::BurningShip,
-                Set::BurningShip => Set::Mandelbrot,
+                Set::BurningShip => Set::Phoenix,
+                Set::Phoenix => Set::Mandelbrot,
               }
             }
             _ => {}

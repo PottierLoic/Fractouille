@@ -3,6 +3,43 @@ use crate::palettes::{PALETTES, PaletteFn};
 use image::Rgb;
 use rayon::prelude::*;
 
+const ESCAPE_RADIUS_SQ: f64 = 4.0;
+const SMOOTH_OFFSET: f64 = 1.0;
+const LOG2: f64 = std::f64::consts::LN_2;
+
+trait FractalIterator: Send + Sync {
+  fn iterate(&self, zx: f64, zy: f64, cx: f64, cy: f64) -> (f64, f64);
+}
+
+struct MandelbrotIterator { power: f64 }
+struct BurningShipIterator;
+
+impl FractalIterator for MandelbrotIterator {
+  fn iterate(&self, zx: f64, zy: f64, cx: f64, cy: f64) -> (f64, f64) {
+    if self.power == 2.0 {
+      let new_zx = zx * zx - zy * zy + cx;
+      let new_zy = 2.0 * zx * zy + cy;
+      (new_zx, new_zy)
+    } else {
+      let r = (zx * zx + zy * zy).sqrt();
+      let theta = zy.atan2(zx);
+      let r_pow = r.powf(self.power);
+      let angle = self.power * theta;
+      (r_pow * angle.cos() + cx, r_pow * angle.sin() + cy)
+    }
+  }
+}
+
+impl FractalIterator for BurningShipIterator {
+  fn iterate(&self, zx: f64, zy: f64, cx: f64, cy: f64) -> (f64, f64) {
+    let abs_zx = zx.abs();
+    let abs_zy = zy.abs();
+    let new_zx = abs_zx * abs_zx - abs_zy * abs_zy + cx;
+    let new_zy = 2.0 * abs_zx * abs_zy + cy;
+    (new_zx, new_zy)
+  }
+}
+
 fn colorize(iter: f64, max_iter: u32, palette: PaletteFn) -> Rgb<u8> {
   let (r, g, b) = if iter >= max_iter as f64 {
     (0, 0, 0)
@@ -13,83 +50,30 @@ fn colorize(iter: f64, max_iter: u32, palette: PaletteFn) -> Rgb<u8> {
 }
 
 fn iterate_point(
-  set: &Set,
-  mut zx: f64,
-  mut zy: f64,
+  iterator: &dyn FractalIterator,
+  zx: f64,
+  zy: f64,
   cx: f64,
   cy: f64,
   max_iterations: u32,
-  power: f64,
-) -> (u32, f64, f64) {
+  smooth: bool,
+) -> f64 {
+  let mut zx = zx;
+  let mut zy = zy;
   let mut i = 0;
-  match set {
-    Set::BurningShip => {
-      while zx * zx + zy * zy <= 4.0 && i < max_iterations {
-        let abs_zx = zx.abs();
-        let abs_zy = zy.abs();
-        let tmp = abs_zx * abs_zx - abs_zy * abs_zy + cx;
-        zy = 2.0 * abs_zx * abs_zy + cy;
-        zx = tmp;
-        i += 1;
-      }
-    }
-    _ => {
-      if power == 2.0 {
-        while zx * zx + zy * zy <= 4.0 && i < max_iterations {
-          let tmp = zx * zx - zy * zy + cx;
-          zy = 2.0 * zx * zy + cy;
-          zx = tmp;
-          i += 1;
-        }
-      } else {
-        while zx * zx + zy * zy <= 4.0 && i < max_iterations {
-          let r = (zx * zx + zy * zy).sqrt();
-          let theta = zy.atan2(zx);
-          let r_pow = r.powf(power);
-          let angle = power * theta;
 
-          zx = r_pow * angle.cos() + cx;
-          zy = r_pow * angle.sin() + cy;
-          i += 1;
-        }
-      }
-    }
+  while zx * zx + zy * zy <= ESCAPE_RADIUS_SQ && i < max_iterations {
+    (zx, zy) = iterator.iterate(zx, zy, cx, cy);
+    i += 1;
   }
 
-  (i, zx, zy)
-}
-
-fn iterate_point_raw(
-  set: &Set,
-  zx: f64,
-  zy: f64,
-  cx: f64,
-  cy: f64,
-  max_iterations: u32,
-  power: f64,
-) -> u32 {
-  let (i, _, _) = iterate_point(set, zx, zy, cx, cy, max_iterations, power);
-  i
-}
-
-fn iterate_point_smooth(
-  set: &Set,
-  zx: f64,
-  zy: f64,
-  cx: f64,
-  cy: f64,
-  max_iterations: u32,
-  power: f64,
-) -> f64 {
-  let (i, zx, zy) = iterate_point(set, zx, zy, cx, cy, max_iterations, power);
-  if i < max_iterations {
+  if smooth && i < max_iterations {
     let log_zn = (zx * zx + zy * zy).sqrt().ln().ln();
-    i as f64 + 1.0 - log_zn / std::f64::consts::LN_2
+    i as f64 + SMOOTH_OFFSET - log_zn / LOG2
   } else {
     i as f64
   }
 }
-
 pub fn generate_image(
   fractal: &Fractal,
   width: u32,
@@ -101,6 +85,13 @@ pub fn generate_image(
   let vh = vw / aspect;
   let left = fractal.z.0 - vw / 2.0;
   let top = fractal.z.1 - vh / 2.0;
+
+  let iterator: Box<dyn FractalIterator> = match fractal.set {
+    Set::Mandelbrot => Box::new(MandelbrotIterator { power: fractal.power }),
+    Set::BurningShip => Box::new(BurningShipIterator),
+    Set::Julia => Box::new(MandelbrotIterator { power: fractal.power }),
+    Set::Phoenix => panic!("Phoenix not implemented"),
+  };
 
   (0..height)
     .into_par_iter()
@@ -118,29 +109,18 @@ pub fn generate_image(
               let zy = top + y as f64 * vh / height as f64;
               (zx, zy, fractal.julia_constant.0, fractal.julia_constant.1)
             }
+            Set::Phoenix => panic!("Phoenix not implemented"),
           };
 
-          let iter = if smooth {
-            iterate_point_smooth(
-              &fractal.set,
-              zx,
-              zy,
-              cx,
-              cy,
-              fractal.max_iterations,
-              fractal.power,
-            )
-          } else {
-            iterate_point_raw(
-              &fractal.set,
-              zx,
-              zy,
-              cx,
-              cy,
-              fractal.max_iterations,
-              fractal.power,
-            ) as f64
-          };
+          let iter = iterate_point(
+            iterator.as_ref(),
+            zx,
+            zy,
+            cx,
+            cy,
+            fractal.max_iterations,
+            smooth,
+          );
 
           colorize(
             iter,
