@@ -7,6 +7,7 @@ use rayon::prelude::*;
 const ESCAPE_RADIUS_SQ: f64 = 4.0;
 const SMOOTH_OFFSET: f64 = 1.0;
 const LOG2: f64 = std::f64::consts::LN_2;
+const CYCLE_LENGTH: f64 = 100.0;
 
 trait FractalIterator: Send + Sync {
   fn iterate(&self, z: Complex, z_prev: Complex, c: Complex) -> Complex;
@@ -57,7 +58,8 @@ fn colorize(iter: f64, max_iter: u32, palette: PaletteFn) -> Rgb<u8> {
   let (r, g, b) = if iter >= max_iter as f64 {
     (0, 0, 0)
   } else {
-    palette(iter / max_iter as f64)
+    let t = (iter / CYCLE_LENGTH).fract();
+    palette(t)
   };
   Rgb([r, g, b])
 }

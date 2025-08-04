@@ -137,4 +137,60 @@ impl Fractal {
 
     Ok(screenshots_dir)
   }
+
+  pub fn record_zoom(
+    &self,
+    width: u32,
+    height: u32,
+    start_scale: f64,
+    end_scale: f64,
+    zoom_speed: f64,
+  ) -> Result<PathBuf, String> {
+    let fractal = self.clone();
+    let base_dir = dirs::picture_dir()
+      .or_else(dirs::home_dir)
+      .ok_or_else(|| "Could not determine user directory".to_string())?;
+    let timestamp = SystemTime::now()
+      .duration_since(UNIX_EPOCH)
+      .unwrap_or_default()
+      .as_secs();
+    let default_dir = format!("fractouille_records/zoom_{}", timestamp);
+    let output_path = base_dir.join(default_dir);
+    fs::create_dir_all(&output_path).map_err(|e| e.to_string())?;
+
+    let thread_output_path = output_path.clone();
+
+    thread::spawn(move || -> Result<PathBuf> {
+      let fps = 30.0;
+      let total_frames = (end_scale.ln() - start_scale.ln()).abs() / zoom_speed * fps;
+      let total_frames = total_frames.ceil() as u32;
+      if total_frames == 0 {
+        return Ok(thread_output_path);
+      }
+
+      let mut thread_fractal = fractal;
+      for frame in 0..total_frames {
+        let t = frame as f64 / total_frames as f64;
+        let scale = start_scale * (end_scale / start_scale).powf(t);
+        thread_fractal.scale = scale;
+
+        let colors = generate_image(&thread_fractal, width, height, true);
+        let mut img = RgbImage::new(width, height);
+        for (y, row) in colors.iter().enumerate() {
+          for (x, pixel) in row.iter().enumerate() {
+            img.put_pixel(x as u32, y as u32, *pixel);
+          }
+        }
+
+        let frame_path = thread_output_path.join(format!("frame_{:04}.png", frame));
+        img
+          .save(&frame_path)
+          .map_err(|e| color_eyre::eyre::eyre!("Failed to save frame: {}", e))?;
+      }
+
+      Ok(thread_output_path)
+    });
+
+    Ok(output_path)
+  }
 }

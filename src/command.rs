@@ -18,6 +18,8 @@ enum Command {
 
   Set(String),
 
+  Record(u32, u32, f64, f64, f64),
+
   Unknown(String),
 }
 
@@ -172,6 +174,36 @@ impl CommandProcessor {
           Command::Unknown(format!("Unknown set: {}", parts[1]))
         }
       }
+      "record" => {
+        if parts.len() != 6 {
+          Command::Unknown(format!(
+            "Usage: record <width> <height> <start_scale> <end_scale> <speed>. Got {} arguments",
+            parts.len() - 1
+          ))
+        } else {
+          let width = match parts[1].parse::<u32>() {
+            Ok(val) => val,
+            Err(_) => return Command::Unknown(format!("Invalid width: {}", parts[1])),
+          };
+          let height = match parts[2].parse::<u32>() {
+            Ok(val) => val,
+            Err(_) => return Command::Unknown(format!("Invalid height: {}", parts[1])),
+          };
+          let start = match parts[3].parse::<f64>() {
+            Ok(val) => val,
+            Err(_) => return Command::Unknown(format!("Invalid start: {}", parts[1])),
+          };
+          let end = match parts[4].parse::<f64>() {
+            Ok(val) => val,
+            Err(_) => return Command::Unknown(format!("Invalid end: {}", parts[1])),
+          };
+          let speed = match parts[5].parse::<f64>() {
+            Ok(val) => val,
+            Err(_) => return Command::Unknown(format!("Invalid speed: {}", parts[1])),
+          };
+          Command::Record(width, height, start, end, speed)
+        }
+      }
 
       cmd => Command::Unknown(format!("Unknown command: {}", cmd)),
     }
@@ -247,6 +279,12 @@ impl CommandProcessor {
         }
         app.fractal.need_render = true;
         Ok(format!("Switched to {} set", set).to_string())
+      }
+      Command::Record(width, height, start, end, speed) => {
+        match app.fractal.record_zoom(width, height, start, end, speed) {
+          Ok(path) => Ok(format!("Record frames saved in {}", path.display())),
+          Err(e) => Ok(format!("Failed to save record frames: {}", e)),
+        }
       }
       Command::Unknown(msg) => Ok(msg),
     }

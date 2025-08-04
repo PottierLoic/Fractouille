@@ -34,3 +34,6 @@ This is a list of all the available commands in Fractouille. They can be entered
 
 - `set <type>`
   Sets the fractal set type. Available types: mandelbrot, julia, burningship
+
+- `record <width> <height> <start> <end> <speed>`
+  Record frames of specified size from `start` to `end` zoom level. Can then be used to make a video using external tools.
