@@ -14,6 +14,7 @@ trait FractalIterator: Send + Sync {
 
 struct MandelbrotIterator { power: f64 }
 struct BurningShipIterator;
+struct PhoenixIterator { power: f64, p: Complex }
 
 impl FractalIterator for MandelbrotIterator {
   fn iterate(&self, z: Complex, _z_prev: Complex, c: Complex) -> Complex {
@@ -32,6 +33,17 @@ impl FractalIterator for BurningShipIterator {
       re: abs_z.re * abs_z.re - abs_z.im * abs_z.im,
       im: 2.0 * abs_z.re * abs_z.im,
     }.add(c)
+  }
+}
+
+impl FractalIterator for PhoenixIterator {
+  fn iterate(&self, z: Complex, z_prev: Complex, c: Complex) -> Complex {
+    let powered_z = if self.power == 2.0 {
+      z.square()
+    } else {
+      Complex::polar(self.power)(z)
+    };
+    powered_z.add(c).add(self.p.mul(z_prev))
   }
 }
 
@@ -85,7 +97,7 @@ pub fn generate_image(
     Set::Mandelbrot => Box::new(MandelbrotIterator { power: fractal.power }),
     Set::BurningShip => Box::new(BurningShipIterator),
     Set::Julia => Box::new(MandelbrotIterator { power: fractal.power }),
-    Set::Phoenix => panic!("Phoenix not implemented"),
+    Set::Phoenix => Box::new(PhoenixIterator { power: fractal.power, p: fractal.phoenix_constant }),
   };
 
   (0..height)
@@ -99,7 +111,7 @@ pub fn generate_image(
               let cy = top + y as f64 * vh / height as f64;
               (Complex::new(0.0, 0.0), Complex::new(cx, cy))
             }
-            Set::Julia => {
+            Set::Julia | Set::Phoenix => {
               let zx = left + x as f64 * vw / width as f64;
               let zy = top + y as f64 * vh / height as f64;
               (
