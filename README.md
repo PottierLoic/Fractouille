@@ -4,41 +4,68 @@
 
 Fractouille is a simple fractal explorer running in your terminal.
 
-It is better to use cargo build --release to build it, as it is a bit slow otherwise.
+[![Rust](https://img.shields.io/badge/rust-1.86.0-orange.svg)](https://www.rust-lang.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+## Features
+
+- Multiple fractal sets (Mandelbrot, Julia, Burning Ship)
+- High-quality screenshot capture with smooth coloring
+- Interactive navigation
+- Command mode for advanced usage
 
 ## Usage
 
-Simply run `cargo run --release` and you should be good to go.  
-You can also install it using `cargo install --path .` then run it using `fractouille`.
+```bash
+# clone the repository
+git clone https://github.com/pottierloic/fractouille
+cd fractouille
+
+# run directly
+cargo run
+
+# or install and run from anywhere
+cargo install --path .
+fractouille
+```
 
 ## Keybinds
 
 - `wasd`: Move around
+- `r/f`: adjust max iterations
+- `-/+`: adjust zoom level
+- `space`: cycle color palette
+- `enter`: switch fractal set
 - `q`: quit fractouille
-- `r/f`: increase/decrease max iterations
-- `-/`: decrease/increase zoom level
-- `space`: change color palette
-- `enter`: change set
-- `:`: enter command mode
-- `esc`: exit command mode
 
 ## Command mode
 
-Pressing `:` enters command mode. A list of all available commands can be found by in the `COMMANDS.md` file.
+Just like in Vim, press `:` to enter command mode. 
+A list of all available commands can be found by in the `COMMANDS.md` file.
 
-## TODO:
-- [x] Mandelbrot
-- [x] Julia
-- [x] Burning Ship
-- [x] Tanking screenshots
-- [x] Smooth coloring on screenshots
-- [ ] Have deep zoom
-- [ ] Saving location
-- [x] Auto move / zoom to saved locations
-- [ ] Make more and better looking color palettes
-- [x] Being able to change the power, not only quadratic
+# Screenshots
+
+Screenshots are automatically saved to your system's Pictures folder inside of `fractouille_screenshots`.
 
 Here are some screenshots:
 ![](museum/mandelbrot.png)
 ![](museum/julia_1752786293_x0.025686664181739313_y0_z3.797498335832415_p6.png)
 ![](museum/base_ship.png)
+
+## Roadmap
+
+- [x] Basic fractal sets implementation
+    - [x] Mandelbrot Set
+    - [x] Julia Set
+    - [x] Burning Ship
+- [x] Screenshot functionality
+    - [x] Smooth coloring
+    - [x] Auto-save
+- [x] Variable power parameter
+
+- [ ] Deep zoom capability
+- [ ] Customizable color palette
+
+- [ ] Phoenix Set implementation
+- [ ] Newton fractals
+- [ ] Lyapunov fractals
