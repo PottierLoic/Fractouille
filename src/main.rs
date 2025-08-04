@@ -96,10 +96,10 @@ impl App {
             KeyCode::Char('-') => f.scale /= 1.1,
             KeyCode::Char('r') => f.max_iterations += 1,
             KeyCode::Char('f') => f.max_iterations = f.max_iterations.saturating_sub(1),
-            KeyCode::Char('a') | KeyCode::Left => f.z.0 -= step,
-            KeyCode::Char('d') | KeyCode::Right => f.z.0 += step,
-            KeyCode::Char('w') | KeyCode::Up => f.z.1 -= step,
-            KeyCode::Char('s') | KeyCode::Down => f.z.1 += step,
+            KeyCode::Char('a') | KeyCode::Left => f.z.re -= step,
+            KeyCode::Char('d') | KeyCode::Right => f.z.re += step,
+            KeyCode::Char('w') | KeyCode::Up => f.z.im -= step,
+            KeyCode::Char('s') | KeyCode::Down => f.z.im += step,
             KeyCode::Char(' ') => f.current_palette = (f.current_palette + 1) % PALETTES.len(),
             KeyCode::Enter => {
               f.set = match f.set {
@@ -142,8 +142,8 @@ impl Widget for &mut App {
         ),
         format!(
           "Position: ({:.6}, {:.6}) | Zoom: {:.2}x | Iterations: {} | Power: {:.2}",
-          self.fractal.z.0,
-          self.fractal.z.1,
+          self.fractal.z.re,
+          self.fractal.z.im,
           self.fractal.scale,
           self.fractal.max_iterations,
           self.fractal.power
@@ -151,7 +151,7 @@ impl Widget for &mut App {
         if self.fractal.set == Set::Julia {
           format!(
             "Julia Constant: {:.6} + {:.6}",
-            self.fractal.julia_constant.0, self.fractal.julia_constant.1
+            self.fractal.julia_constant.re, self.fractal.julia_constant.im
           )
         } else {
           "".to_string()

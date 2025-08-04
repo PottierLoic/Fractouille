@@ -162,7 +162,8 @@ impl CommandProcessor {
   pub fn execute(app: &mut App) -> Result<String> {
     match Self::parse(&app.command_string) {
       Command::Move(x, y, zoom) => {
-        app.fractal.z = (x, y);
+        app.fractal.z.re = x;
+        app.fractal.z.im = y;
         if let Some(zoom) = zoom {
           app.fractal.scale = zoom;
         }
@@ -187,7 +188,8 @@ impl CommandProcessor {
         Ok("Bye!".to_string())
       }
       Command::Complex(real, imag) => {
-        app.fractal.julia_constant = (real, imag);
+        app.fractal.julia_constant.re = real;
+        app.fractal.julia_constant.im = imag;
         app.fractal.need_render = true;
         Ok(format!(
           "Julia set constant updated to {} + {}i",

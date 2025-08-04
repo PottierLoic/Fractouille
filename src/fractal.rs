@@ -8,6 +8,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
+use crate::complex::Complex;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Set {
@@ -20,14 +21,14 @@ pub enum Set {
 #[derive(Debug, Clone)]
 pub struct Fractal {
   pub colors: Vec<Vec<Color>>,
-  pub z: (f64, f64),
+  pub z: Complex,
   pub scale: f64,
   pub max_iterations: u32,
   pub need_render: bool,
   pub current_palette: usize,
   pub set: Set,
-  pub julia_constant: (f64, f64),
-  pub phoenix_constant: (f64, f64),
+  pub julia_constant: Complex,
+  pub phoenix_constant: Complex,
   pub power: f64,
 }
 
@@ -35,14 +36,14 @@ impl Default for Fractal {
   fn default() -> Self {
     Self {
       colors: vec![],
-      z: (-0.5, 0.0),
+      z: Complex::new(-0.5, 0.0),
       scale: 1.0,
       max_iterations: 100,
       need_render: true,
       current_palette: 0,
       set: Set::Mandelbrot,
-      julia_constant: (-0.5251993, -0.5251993),
-      phoenix_constant: (-0.5251993, -0.5251993),
+      julia_constant: Complex::new(-0.5251993, -0.5251993),
+      phoenix_constant:  Complex::new(-0.5251993, -0.5251993),
       power: 2.0,
     }
   }
@@ -123,7 +124,7 @@ impl Fractal {
 
       let filename = format!(
         "{}_{}_x{}_y{}_z{}_p{}.png",
-        name, timestamp, fractal.z.0, fractal.z.1, fractal.scale, fractal.power
+        name, timestamp, fractal.z.re, fractal.z.im, fractal.scale, fractal.power
       );
 
       let file_path = thread_screenshots_dir.join(&filename);
