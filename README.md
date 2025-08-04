@@ -66,6 +66,6 @@ Here are some screenshots:
 - [ ] Deep zoom capability
 - [ ] Customizable color palette
 
-- [ ] Phoenix Set implementation
+- [x] Phoenix Set implementation
 - [ ] Newton fractals
 - [ ] Lyapunov fractals
