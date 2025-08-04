@@ -187,19 +187,19 @@ impl CommandProcessor {
           };
           let height = match parts[2].parse::<u32>() {
             Ok(val) => val,
-            Err(_) => return Command::Unknown(format!("Invalid height: {}", parts[1])),
+            Err(_) => return Command::Unknown(format!("Invalid height: {}", parts[2])),
           };
           let start = match parts[3].parse::<f64>() {
             Ok(val) => val,
-            Err(_) => return Command::Unknown(format!("Invalid start: {}", parts[1])),
+            Err(_) => return Command::Unknown(format!("Invalid start_scale: {}", parts[3])),
           };
           let end = match parts[4].parse::<f64>() {
             Ok(val) => val,
-            Err(_) => return Command::Unknown(format!("Invalid end: {}", parts[1])),
+            Err(_) => return Command::Unknown(format!("Invalid end_scale: {}", parts[4])),
           };
           let speed = match parts[5].parse::<f64>() {
             Ok(val) => val,
-            Err(_) => return Command::Unknown(format!("Invalid speed: {}", parts[1])),
+            Err(_) => return Command::Unknown(format!("Invalid speed: {}", parts[5])),
           };
           Command::Record(width, height, start, end, speed)
         }
