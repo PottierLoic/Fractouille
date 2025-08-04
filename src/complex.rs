@@ -19,7 +19,7 @@ impl Complex {
       im: self.im + other.im,
     }
   }
-  
+
   pub fn mul(self, other: Complex) -> Complex {
     Complex {
       re: self.re * other.re - self.im * other.im,

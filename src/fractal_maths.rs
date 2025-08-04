@@ -1,8 +1,8 @@
+use crate::complex::Complex;
 use crate::fractal::{Fractal, Set};
 use crate::palettes::{PALETTES, PaletteFn};
 use image::Rgb;
 use rayon::prelude::*;
-use crate::complex::Complex;
 
 const ESCAPE_RADIUS_SQ: f64 = 4.0;
 const SMOOTH_OFFSET: f64 = 1.0;
@@ -12,9 +12,14 @@ trait FractalIterator: Send + Sync {
   fn iterate(&self, z: Complex, z_prev: Complex, c: Complex) -> Complex;
 }
 
-struct MandelbrotIterator { power: f64 }
+struct MandelbrotIterator {
+  power: f64,
+}
 struct BurningShipIterator;
-struct PhoenixIterator { power: f64, p: Complex }
+struct PhoenixIterator {
+  power: f64,
+  p: Complex,
+}
 
 impl FractalIterator for MandelbrotIterator {
   fn iterate(&self, z: Complex, _z_prev: Complex, c: Complex) -> Complex {
@@ -32,7 +37,8 @@ impl FractalIterator for BurningShipIterator {
     Complex {
       re: abs_z.re * abs_z.re - abs_z.im * abs_z.im,
       im: 2.0 * abs_z.re * abs_z.im,
-    }.add(c)
+    }
+    .add(c)
   }
 }
 
@@ -94,10 +100,17 @@ pub fn generate_image(
   let top = fractal.z.im - vh / 2.0;
 
   let iterator: Box<dyn FractalIterator + Send + Sync> = match fractal.set {
-    Set::Mandelbrot => Box::new(MandelbrotIterator { power: fractal.power }),
+    Set::Mandelbrot => Box::new(MandelbrotIterator {
+      power: fractal.power,
+    }),
     Set::BurningShip => Box::new(BurningShipIterator),
-    Set::Julia => Box::new(MandelbrotIterator { power: fractal.power }),
-    Set::Phoenix => Box::new(PhoenixIterator { power: fractal.power, p: fractal.phoenix_constant }),
+    Set::Julia => Box::new(MandelbrotIterator {
+      power: fractal.power,
+    }),
+    Set::Phoenix => Box::new(PhoenixIterator {
+      power: fractal.power,
+      p: fractal.phoenix_constant,
+    }),
   };
 
   (0..height)
@@ -123,7 +136,11 @@ pub fn generate_image(
 
           let iter = iterate_point(iterator.as_ref(), z, c, fractal.max_iterations, smooth);
 
-          colorize(iter, fractal.max_iterations, PALETTES[fractal.current_palette])
+          colorize(
+            iter,
+            fractal.max_iterations,
+            PALETTES[fractal.current_palette],
+          )
         })
         .collect()
     })

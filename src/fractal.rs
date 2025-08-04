@@ -1,3 +1,4 @@
+use crate::complex::Complex;
 use crate::fractal_maths::generate_image;
 use color_eyre::eyre::Result;
 use image::RgbImage;
@@ -8,7 +9,6 @@ use std::fs;
 use std::path::PathBuf;
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::complex::Complex;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Set {
@@ -43,7 +43,7 @@ impl Default for Fractal {
       current_palette: 0,
       set: Set::Mandelbrot,
       julia_constant: Complex::new(-0.5251993, -0.5251993),
-      phoenix_constant:  Complex::new( -0.25, 0.0),
+      phoenix_constant: Complex::new(-0.25, 0.0),
       power: 2.0,
     }
   }
