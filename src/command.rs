@@ -10,7 +10,8 @@ enum Command {
   Help,
   Quit,
 
-  Complex(f64, f64),
+  Julia(f64, f64),
+  Phoenix(f64, f64),
   Power(f64),
   Iterations(u32),
   Zoom(f64),
@@ -81,7 +82,7 @@ impl CommandProcessor {
       "help" => Command::Help,
       "q" => Command::Quit,
       "quit" => Command::Quit,
-      "complex" => {
+      "julia" => {
         if parts.len() != 3 {
           return Command::Unknown(format!(
             "Usage: complex <real> <imaginary>. Got {} arguments",
@@ -96,7 +97,24 @@ impl CommandProcessor {
           Ok(val) => val,
           Err(_) => return Command::Unknown(format!("Invalid imaginary part: {}", parts[2])),
         };
-        Command::Complex(real, imag)
+        Command::Julia(real, imag)
+      }
+      "phoenix" => {
+        if parts.len() != 3 {
+          return Command::Unknown(format!(
+            "Usage: phoenix <real> <imaginary>. Got {} arguments",
+            parts.len() - 1
+          ));
+        }
+        let real = match parts[1].parse::<f64>() {
+          Ok(val) => val,
+          Err(_) => return Command::Unknown(format!("Invalid real part: {}", parts[1])),
+        };
+        let imag = match parts[2].parse::<f64>() {
+          Ok(val) => val,
+          Err(_) => return Command::Unknown(format!("Invalid imaginary part: {}", parts[2])),
+        };
+        Command::Phoenix(real, imag)
       }
       "power" => {
         if parts.len() != 2 {
@@ -187,12 +205,20 @@ impl CommandProcessor {
         app.quit_requested = true;
         Ok("Bye!".to_string())
       }
-      Command::Complex(real, imag) => {
+      Command::Julia(real, imag) => {
         app.fractal.julia_constant.re = real;
         app.fractal.julia_constant.im = imag;
         app.fractal.need_render = true;
         Ok(format!(
           "Julia set constant updated to {} + {}i",
+          real, imag
+        ))
+      }
+      Command::Phoenix(real, imag) => {
+        app.fractal.phoenix_constant.re = real;
+        app.fractal.phoenix_constant.im = imag;
+        Ok(format!(
+          "Phoenix set constant updated to {} + {}i",
           real, imag
         ))
       }
