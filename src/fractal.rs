@@ -43,7 +43,7 @@ impl Default for Fractal {
       current_palette: 0,
       set: Set::Mandelbrot,
       julia_constant: Complex::new(-0.5251993, -0.5251993),
-      phoenix_constant:  Complex::new(-0.5251993, -0.5251993),
+      phoenix_constant:  Complex::new( -0.25, 0.0),
       power: 2.0,
     }
   }
