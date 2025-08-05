@@ -9,19 +9,15 @@ enum Command {
   Screenshot(Option<u32>, Option<u32>),
   Help,
   Quit,
-
   Julia(f64, f64),
   PhoenixC(f64),
   PhoenixP(f64, f64),
   Power(f64),
   Iterations(u32),
   Zoom(f64),
-
   Set(String),
-
   Record(u32, u32, f64, f64, f64),
   ColorCycle(f64),
-
   Unknown(String),
 }
 
