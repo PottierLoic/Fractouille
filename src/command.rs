@@ -19,6 +19,7 @@ enum Command {
   Set(String),
 
   Record(u32, u32, f64, f64, f64),
+  ColorCycle(f64),
 
   Unknown(String),
 }
@@ -204,6 +205,19 @@ impl CommandProcessor {
           Command::Record(width, height, start, end, speed)
         }
       }
+      "colorcycle" => {
+        if parts.len() != 2 {
+          Command::Unknown(format!(
+            "Usage: colorcycle <cycle value>. Got {} arguments",
+            parts.len() - 1
+          ))
+        } else {
+          match parts[1].parse::<f64>() {
+            Ok(val) => Command::ColorCycle(val),
+            Err(_) => Command::Unknown(format!("Invalid cycle value: {}", parts[1])),
+          }
+        }
+      }
 
       cmd => Command::Unknown(format!("Unknown command: {}", cmd)),
     }
@@ -285,6 +299,10 @@ impl CommandProcessor {
           Ok(path) => Ok(format!("Record frames saved in {}", path.display())),
           Err(e) => Ok(format!("Failed to save record frames: {}", e)),
         }
+      }
+      Command::ColorCycle(cycle) => {
+        app.fractal.color_cycle = cycle;
+        Ok(format!("Color cycle updated to {}", cycle))
       }
       Command::Unknown(msg) => Ok(msg),
     }

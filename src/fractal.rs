@@ -30,6 +30,7 @@ pub struct Fractal {
   pub julia_constant: Complex,
   pub phoenix_constant: Complex,
   pub power: f64,
+  pub color_cycle: f64,
 }
 
 impl Default for Fractal {
@@ -45,6 +46,7 @@ impl Default for Fractal {
       julia_constant: Complex::new(-0.5251993, -0.5251993),
       phoenix_constant: Complex::new(-0.25, 0.0),
       power: 2.0,
+      color_cycle: 100.0,
     }
   }
 }

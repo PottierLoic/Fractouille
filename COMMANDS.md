@@ -37,3 +37,6 @@ This is a list of all the available commands in Fractouille. They can be entered
 
 - `record <width> <height> <start> <end> <speed>`
   Record frames of specified size from `start` to `end` zoom level. Can then be used to make a video using external tools.
+
+- `colorcycle <n>`
+  Set the `colorcycle` value to `n`, it controls the speed at which the palette will cycle through colors.
