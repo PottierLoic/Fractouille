@@ -28,7 +28,8 @@ pub struct Fractal {
   pub current_palette: usize,
   pub set: Set,
   pub julia_constant: Complex,
-  pub phoenix_constant: Complex,
+  pub phoenix_c: Complex,
+  pub phoenix_p: Complex,
   pub power: f64,
   pub color_cycle: f64,
 }
@@ -44,7 +45,8 @@ impl Default for Fractal {
       current_palette: 0,
       set: Set::Mandelbrot,
       julia_constant: Complex::new(-0.5251993, -0.5251993),
-      phoenix_constant: Complex::new(-0.25, 0.0),
+      phoenix_c: Complex::new(0.0, 0.0),
+      phoenix_p: Complex::new(-0.5, 0.0),
       power: 2.0,
       color_cycle: 100.0,
     }

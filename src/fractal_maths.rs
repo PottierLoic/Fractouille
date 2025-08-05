@@ -18,6 +18,7 @@ struct MandelbrotIterator {
 struct BurningShipIterator;
 struct PhoenixIterator {
   power: f64,
+  c: Complex,
   p: Complex,
 }
 
@@ -43,13 +44,13 @@ impl FractalIterator for BurningShipIterator {
 }
 
 impl FractalIterator for PhoenixIterator {
-  fn iterate(&self, z: Complex, z_prev: Complex, c: Complex) -> Complex {
+  fn iterate(&self, z: Complex, z_prev: Complex, _c: Complex) -> Complex {
     let powered_z = if self.power == 2.0 {
       z.square()
     } else {
       Complex::polar(self.power)(z)
     };
-    powered_z.add(c).add(self.p.mul(z_prev))
+    powered_z.add(self.c).add(self.p.mul(z_prev))
   }
 }
 
@@ -110,7 +111,8 @@ pub fn generate_image(
     }),
     Set::Phoenix => Box::new(PhoenixIterator {
       power: fractal.power,
-      p: fractal.phoenix_constant,
+      c: fractal.phoenix_c,
+      p: fractal.phoenix_p,
     }),
   };
 
@@ -119,20 +121,21 @@ pub fn generate_image(
     .map(|y| {
       (0..width)
         .map(|x| {
+          let cx = left + x as f64 * vw / width as f64;
+          let cy = top + y as f64 * vh / height as f64;
           let (z, c) = match fractal.set {
             Set::Mandelbrot | Set::BurningShip => {
-              let cx = left + x as f64 * vw / width as f64;
-              let cy = top + y as f64 * vh / height as f64;
               (Complex::new(0.0, 0.0), Complex::new(cx, cy))
             }
-            Set::Julia | Set::Phoenix => {
-              let zx = left + x as f64 * vw / width as f64;
-              let zy = top + y as f64 * vh / height as f64;
+            Set::Julia => {
               (
-                Complex::new(zx, zy),
+                Complex::new(cx, cy),
                 Complex::new(fractal.julia_constant.re, fractal.julia_constant.im),
               )
             }
+            Set::Phoenix => {
+              (Complex::new(cy, cx), Complex::new(0.0, 0.0)) // WTF is it rotated ??? TODO
+            },
           };
 
           let iter = iterate_point(iterator.as_ref(), z, c, fractal.max_iterations, smooth);

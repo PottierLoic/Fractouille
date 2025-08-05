@@ -20,8 +20,11 @@ This is a list of all the available commands in Fractouille. They can be entered
 - `julia <real> <imaginary>`
   Sets the complex constant for the Julia set (real + imaginary*i).
 
-- `phoenix <real> <imaginary>`
-  Sets the complex constant for the Phoenix set (real + imaginary*i).
+- `phoenix_c <real>`
+  Sets the real constant c for the Phoenix set.
+
+- `phoenix_p <real> <imaginary>`
+  Sets the complex constant p for the Phoenix set (real + imaginary*i).
 
 - `power <value>`
   Sets the power value for the fractal equation (e.g., z^power for Mandelbrot/Julia). Affects the fractal's shape and computation speed.

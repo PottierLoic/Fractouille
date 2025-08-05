@@ -11,7 +11,8 @@ enum Command {
   Quit,
 
   Julia(f64, f64),
-  Phoenix(f64, f64),
+  PhoenixC(f64),
+  PhoenixP(f64, f64),
   Power(f64),
   Iterations(u32),
   Zoom(f64),
@@ -102,10 +103,23 @@ impl CommandProcessor {
         };
         Command::Julia(real, imag)
       }
-      "phoenix" => {
+      "phoenix_c" => {
+        if parts.len() != 2 {
+          return Command::Unknown(format!(
+            "Usage: phoenix_c <real>. Got {} arguments",
+            parts.len() - 1
+          ));
+        }
+        let real = match parts[1].parse::<f64>() {
+          Ok(val) => val,
+          Err(_) => return Command::Unknown(format!("Invalid real part: {}", parts[1])),
+        };
+        Command::PhoenixC(real)
+      }
+      "phoenix_p" => {
         if parts.len() != 3 {
           return Command::Unknown(format!(
-            "Usage: phoenix <real> <imaginary>. Got {} arguments",
+            "Usage: phoenix_p <real> <imaginary>. Got {} arguments",
             parts.len() - 1
           ));
         }
@@ -117,7 +131,7 @@ impl CommandProcessor {
           Ok(val) => val,
           Err(_) => return Command::Unknown(format!("Invalid imaginary part: {}", parts[2])),
         };
-        Command::Phoenix(real, imag)
+        Command::PhoenixP(real, imag)
       }
       "power" => {
         if parts.len() != 2 {
@@ -260,11 +274,15 @@ impl CommandProcessor {
           real, imag
         ))
       }
-      Command::Phoenix(real, imag) => {
-        app.fractal.phoenix_constant.re = real;
-        app.fractal.phoenix_constant.im = imag;
+      Command::PhoenixC(real) => {
+        app.fractal.phoenix_c.re = real;
+        Ok(format!("Phoenix set constant C updated to {}", real))
+      }
+      Command::PhoenixP(real, imag) => {
+        app.fractal.phoenix_p.re = real;
+        app.fractal.phoenix_p.im = imag;
         Ok(format!(
-          "Phoenix set constant updated to {} + {}i",
+          "Phoenix set constant P updated to {} + {}i",
           real, imag
         ))
       }
