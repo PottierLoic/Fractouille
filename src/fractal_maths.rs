@@ -124,18 +124,14 @@ pub fn generate_image(
           let cx = left + x as f64 * vw / width as f64;
           let cy = top + y as f64 * vh / height as f64;
           let (z, c) = match fractal.set {
-            Set::Mandelbrot | Set::BurningShip => {
-              (Complex::new(0.0, 0.0), Complex::new(cx, cy))
-            }
-            Set::Julia => {
-              (
-                Complex::new(cx, cy),
-                Complex::new(fractal.julia_c.re, fractal.julia_c.im),
-              )
-            }
+            Set::Mandelbrot | Set::BurningShip => (Complex::new(0.0, 0.0), Complex::new(cx, cy)),
+            Set::Julia => (
+              Complex::new(cx, cy),
+              Complex::new(fractal.julia_c.re, fractal.julia_c.im),
+            ),
             Set::Phoenix => {
               (Complex::new(cy, cx), Complex::new(0.0, 0.0)) // WTF is it rotated ??? TODO
-            },
+            }
           };
 
           let iter = iterate_point(iterator.as_ref(), z, c, fractal.max_iterations, smooth);

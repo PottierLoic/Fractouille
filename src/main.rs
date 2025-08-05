@@ -156,8 +156,10 @@ impl Widget for &mut App {
         } else if self.fractal.set == Set::Phoenix {
           format!(
             "C: {:.6} + {:.6} | P: {:.6} + {:.6}",
-            self.fractal.phoenix_c.re, self.fractal.phoenix_c.im,
-            self.fractal.phoenix_p.re, self.fractal.phoenix_p.im
+            self.fractal.phoenix_c.re,
+            self.fractal.phoenix_c.im,
+            self.fractal.phoenix_p.re,
+            self.fractal.phoenix_p.im
           )
         } else {
           "".to_string()
