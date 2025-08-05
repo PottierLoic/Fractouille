@@ -130,7 +130,7 @@ pub fn generate_image(
             Set::Julia => {
               (
                 Complex::new(cx, cy),
-                Complex::new(fractal.julia_constant.re, fractal.julia_constant.im),
+                Complex::new(fractal.julia_c.re, fractal.julia_c.im),
               )
             }
             Set::Phoenix => {

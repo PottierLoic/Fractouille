@@ -266,8 +266,8 @@ impl CommandProcessor {
         Ok("Bye!".to_string())
       }
       Command::Julia(real, imag) => {
-        app.fractal.julia_constant.re = real;
-        app.fractal.julia_constant.im = imag;
+        app.fractal.julia_c.re = real;
+        app.fractal.julia_c.im = imag;
         app.fractal.need_render = true;
         Ok(format!(
           "Julia set constant updated to {} + {}i",
