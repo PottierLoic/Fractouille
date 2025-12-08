@@ -4,6 +4,7 @@ mod fractal;
 mod fractal_maths;
 mod palettes;
 
+use std::process::Command;
 use crate::command::CommandProcessor;
 use crate::fractal::{Fractal, Set};
 use crate::palettes::PALETTES;
@@ -17,6 +18,8 @@ use ratatui::{
   widgets::Widget,
 };
 use std::time::Duration;
+use ratatui::style::{Modifier, Style};
+use ratatui::text::{Line, Span};
 
 #[derive(Debug, Default)]
 struct App {
@@ -25,6 +28,7 @@ struct App {
   show_extended_menu: bool,
   command_mode: bool,
   command_string: String,
+  command_autocompletion: String,
   quit_requested: bool,
   command_result: String,
 }
@@ -78,6 +82,12 @@ impl App {
             }
             KeyCode::Char(c) => {
               self.command_string.push(c);
+            }
+            KeyCode::Tab => {
+              let full_command = CommandProcessor::find_command_autocompletion(self.command_string.as_str());
+              if let Some(completion) = full_command {
+                self.command_string = completion.parse()?;
+              }
             }
             _ => {}
           }
@@ -189,7 +199,14 @@ impl Widget for &mut App {
     self.fractal.render(main, buf);
 
     if self.command_mode {
-      Text::from(format!(":{}", self.command_string)).render(cmd_bar, buf);
+      let mut completion_hint = Some("");
+      if !self.command_string.is_empty() {
+        completion_hint = CommandProcessor::find_command_match(&*self.command_string);
+      }
+      Text::from(Line::from(vec![
+        Span::styled(self.command_string.clone(), Style::default().add_modifier(Modifier::BOLD)),
+        Span::from(completion_hint.unwrap_or("")),
+      ])).render(cmd_bar, buf);
     } else {
       Text::from(self.command_result.to_string()).render(cmd_bar, buf);
     }

@@ -21,6 +21,23 @@ enum Command {
   Unknown(String),
 }
 
+static COMMAND_NAMES: &[&str] = &[
+  "move <x> <y> [zoom]",
+  "reset",
+  "screenshot [width] [height]",
+  "help",
+  "quit",
+  "julia <real> <imag>",
+  "phoenix_c <real>",
+  "phoenix_p <real> <imag>",
+  "power <value>",
+  "iterations <count>",
+  "zoom <level>",
+  "set <mandelbrot|julia|burningship>",
+  "record <w> <h> <start> <end> <speed>",
+  "colorcycle <value>",
+];
+
 pub struct CommandProcessor;
 
 impl CommandProcessor {
@@ -320,5 +337,19 @@ impl CommandProcessor {
       }
       Command::Unknown(msg) => Ok(msg),
     }
+  }
+
+  pub fn find_command_match(command: &str) -> Option<&str> {
+    let cmd = COMMAND_NAMES
+        .iter()
+        .find(|name| name.starts_with(command))?;
+    Some(&cmd[command.len()..])
+  }
+
+  pub fn find_command_autocompletion(command: &str) -> Option<&str> {
+    let cmd = COMMAND_NAMES
+        .iter()
+        .find(|name| name.starts_with(command))?;
+    cmd.split_whitespace().next()
   }
 }
