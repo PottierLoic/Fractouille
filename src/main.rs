@@ -4,22 +4,28 @@ mod fractal;
 mod fractal_maths;
 mod palettes;
 
-use std::process::Command;
 use crate::command::CommandProcessor;
 use crate::fractal::{Fractal, Set};
 use crate::palettes::PALETTES;
 use color_eyre::Result;
+use ratatui::layout::Direction;
+use ratatui::style::{Color, Modifier, Style};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, Borders, Gauge};
 use ratatui::{
-  DefaultTerminal,
   buffer::Buffer,
   crossterm::event::{self, Event, KeyCode, KeyEventKind},
   layout::{Constraint::*, Layout, Rect},
   text::Text,
   widgets::Widget,
+  DefaultTerminal,
 };
 use std::time::Duration;
-use ratatui::style::{Modifier, Style};
-use ratatui::text::{Line, Span};
+
+pub enum ProgressEvent {
+  Progress(f64),
+  Finished,
+}
 
 #[derive(Debug, Default)]
 struct App {
@@ -30,6 +36,9 @@ struct App {
   command_string: String,
   quit_requested: bool,
   command_result: String,
+  show_record_popup: bool,
+  record_progress: f64,
+  progress_rx: Option<std::sync::mpsc::Receiver<ProgressEvent>>,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -126,6 +135,23 @@ impl App {
         }
       }
     }
+    let mut finished = false;
+    if let Some(rx) = &self.progress_rx {
+      while let Ok(event) = rx.try_recv() {
+        match event {
+          ProgressEvent::Progress(p) => {
+            self.record_progress = p;
+          }
+          ProgressEvent::Finished => {
+            finished = true;
+          }
+        }
+      }
+    }
+    if finished {
+      self.progress_rx = None;
+      self.show_record_popup = false;
+    }
     if self.quit_requested {
       self.state = AppState::Quit;
     }
@@ -209,5 +235,49 @@ impl Widget for &mut App {
     } else {
       Text::from(self.command_result.to_string()).render(cmd_bar, buf);
     }
+
+    if self.show_record_popup {
+      draw_record_popup(area, buf, self);
+    }
   }
+}
+
+fn draw_record_popup(area: Rect, buf: &mut Buffer, app: &App) {
+  let popup_width = 30;
+  let popup_height = 5;
+
+  let popup_area = Rect {
+    x: area.x + area.width.saturating_sub(popup_width),
+    y: area.y,
+    width: popup_width,
+    height: popup_height,
+  };
+
+  for y in popup_area.y..popup_area.y + popup_area.height {
+    for x in popup_area.x..popup_area.x + popup_area.width {
+      let cell = buf.get_mut(x, y);
+      cell.set_bg(Color::Black);
+      cell.set_fg(Color::White);
+      cell.set_symbol(" ");
+    }
+  }
+
+  Block::default()
+      .title("Recording…")
+      .borders(Borders::ALL)
+      .render(popup_area, buf);
+
+  let inner = Layout::default()
+      .direction(Direction::Vertical)
+      .constraints([
+        Length(1),
+        Length(3),
+      ])
+      .margin(1)
+      .split(popup_area);
+
+  Gauge::default()
+      .ratio(app.record_progress)
+      .label(format!("{:.0}%", app.record_progress * 100.0))
+      .render(inner[1], buf);
 }

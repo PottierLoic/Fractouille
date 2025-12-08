@@ -326,7 +326,11 @@ impl CommandProcessor {
         Ok(format!("Switched to {} set", set).to_string())
       }
       Command::Record(width, height, start, end, speed) => {
-        match app.fractal.record_zoom(width, height, start, end, speed) {
+        let (tx, rx) = std::sync::mpsc::channel();
+        app.progress_rx = Some(rx);
+        app.show_record_popup = true;
+        app.record_progress = 0.0;
+        match app.fractal.record_zoom(width, height, start, end, speed, tx) {
           Ok(path) => Ok(format!("Record frames saved in {}", path.display())),
           Err(e) => Ok(format!("Failed to save record frames: {}", e)),
         }

@@ -9,6 +9,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
+use crate::ProgressEvent;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Set {
@@ -149,6 +150,7 @@ impl Fractal {
     start_scale: f64,
     end_scale: f64,
     zoom_speed: f64,
+    progress_tx: std::sync::mpsc::Sender<ProgressEvent>,
   ) -> Result<PathBuf, String> {
     let fractal = self.clone();
     let base_dir = dirs::picture_dir()
@@ -169,6 +171,7 @@ impl Fractal {
       let total_frames = (end_scale.ln() - start_scale.ln()).abs() / zoom_speed * fps;
       let total_frames = total_frames.ceil() as u32;
       if total_frames == 0 {
+        let _ = progress_tx.send(ProgressEvent::Finished);
         return Ok(thread_output_path);
       }
 
@@ -190,7 +193,9 @@ impl Fractal {
         img
           .save(&frame_path)
           .map_err(|e| color_eyre::eyre::eyre!("Failed to save frame: {}", e))?;
+        let _ = progress_tx.send(ProgressEvent::Progress(frame as f64 / total_frames as f64));
       }
+      let _ = progress_tx.send(ProgressEvent::Finished);
 
       Ok(thread_output_path)
     });
