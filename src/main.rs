@@ -28,7 +28,6 @@ struct App {
   show_extended_menu: bool,
   command_mode: bool,
   command_string: String,
-  command_autocompletion: String,
   quit_requested: bool,
   command_result: String,
 }
