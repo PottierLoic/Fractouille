@@ -11,7 +11,6 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
-use which;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Set {

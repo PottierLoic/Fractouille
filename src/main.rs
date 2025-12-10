@@ -227,7 +227,7 @@ impl Widget for &mut App {
     if self.command_mode {
       let mut completion_hint = Some("");
       if !self.command_string.is_empty() {
-        completion_hint = CommandProcessor::find_command_match(&*self.command_string);
+        completion_hint = CommandProcessor::find_command_match(&self.command_string);
       }
       Text::from(Line::from(vec![
         Span::styled(
@@ -260,7 +260,7 @@ fn draw_record_popup(area: Rect, buf: &mut Buffer, app: &App) {
 
   for y in popup_area.y..popup_area.y + popup_area.height {
     for x in popup_area.x..popup_area.x + popup_area.width {
-      let cell = buf.get_mut(x, y);
+      let cell = &mut buf[(x, y)];
       cell.set_bg(Color::Black);
       cell.set_fg(Color::White);
       cell.set_symbol(" ");
