@@ -7,9 +7,11 @@ use ratatui::layout::{Position, Rect};
 use ratatui::prelude::{Color, Widget};
 use std::fs;
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::ProgressEvent;
+use which;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Set {
@@ -196,6 +198,25 @@ impl Fractal {
         let _ = progress_tx.send(ProgressEvent::Progress(frame as f64 / total_frames as f64));
       }
       let _ = progress_tx.send(ProgressEvent::Finished);
+
+      if which::which("ffmpeg").is_ok() {
+        Command::new("ffmpeg")
+            .arg("-framerate")
+            .arg(fps.to_string())
+            .arg("-i")
+            .arg(format!("{}/frame_%04d.png", thread_output_path.display()))
+            .arg("-c:v")
+            .arg("libx264")
+            .arg("-pix_fmt")
+            .arg("yuv420p")
+            .arg("-crf")
+            .arg("18")
+            .arg("video.mp4")
+            .current_dir(&thread_output_path)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()?;
+      }
 
       Ok(thread_output_path)
     });

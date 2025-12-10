@@ -1,10 +1,6 @@
 # Recording (WIP)
 
-The `record` command will save frames so you can make a video. (It takes some time)
-Then you can merge the frames using ffmpeg for example.
+The `record` command will save frames and then try to use `ffmpeg` to create a video.
+If you don't have `ffmpeg` installed, you will only get the frames.
+Everything is saved in the `pictures` folder of your OS.
 
-Working command:
-```bash
-cd fractouille_record/zoom_XXXXX
-ffmpeg -framerate 30 -i frame_%04d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video.mp4
-```
