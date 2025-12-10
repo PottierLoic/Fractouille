@@ -13,12 +13,12 @@ use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Gauge};
 use ratatui::{
+  DefaultTerminal,
   buffer::Buffer,
   crossterm::event::{self, Event, KeyCode, KeyEventKind},
   layout::{Constraint::*, Layout, Rect},
   text::Text,
   widgets::Widget,
-  DefaultTerminal,
 };
 use std::time::Duration;
 
@@ -92,7 +92,8 @@ impl App {
               self.command_string.push(c);
             }
             KeyCode::Tab => {
-              let full_command = CommandProcessor::find_command_autocompletion(self.command_string.as_str());
+              let full_command =
+                CommandProcessor::find_command_autocompletion(self.command_string.as_str());
               if let Some(completion) = full_command {
                 self.command_string = completion.parse()?;
               }
@@ -229,9 +230,13 @@ impl Widget for &mut App {
         completion_hint = CommandProcessor::find_command_match(&*self.command_string);
       }
       Text::from(Line::from(vec![
-        Span::styled(self.command_string.clone(), Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled(
+          self.command_string.clone(),
+          Style::default().add_modifier(Modifier::BOLD),
+        ),
         Span::from(completion_hint.unwrap_or("")),
-      ])).render(cmd_bar, buf);
+      ]))
+      .render(cmd_bar, buf);
     } else {
       Text::from(self.command_result.to_string()).render(cmd_bar, buf);
     }
@@ -263,21 +268,18 @@ fn draw_record_popup(area: Rect, buf: &mut Buffer, app: &App) {
   }
 
   Block::default()
-      .title("Recording…")
-      .borders(Borders::ALL)
-      .render(popup_area, buf);
+    .title("Recording…")
+    .borders(Borders::ALL)
+    .render(popup_area, buf);
 
   let inner = Layout::default()
-      .direction(Direction::Vertical)
-      .constraints([
-        Length(1),
-        Length(3),
-      ])
-      .margin(1)
-      .split(popup_area);
+    .direction(Direction::Vertical)
+    .constraints([Length(1), Length(3)])
+    .margin(1)
+    .split(popup_area);
 
   Gauge::default()
-      .ratio(app.record_progress)
-      .label(format!("{:.0}%", app.record_progress * 100.0))
-      .render(inner[1], buf);
+    .ratio(app.record_progress)
+    .label(format!("{:.0}%", app.record_progress * 100.0))
+    .render(inner[1], buf);
 }

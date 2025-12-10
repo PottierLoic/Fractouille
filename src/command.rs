@@ -330,7 +330,10 @@ impl CommandProcessor {
         app.progress_rx = Some(rx);
         app.show_record_popup = true;
         app.record_progress = 0.0;
-        match app.fractal.record_zoom(width, height, start, end, speed, tx) {
+        match app
+          .fractal
+          .record_zoom(width, height, start, end, speed, tx)
+        {
           Ok(path) => Ok(format!("Record frames saved in {}", path.display())),
           Err(e) => Ok(format!("Failed to save record frames: {}", e)),
         }
@@ -345,15 +348,15 @@ impl CommandProcessor {
 
   pub fn find_command_match(command: &str) -> Option<&str> {
     let cmd = COMMAND_NAMES
-        .iter()
-        .find(|name| name.starts_with(command))?;
+      .iter()
+      .find(|name| name.starts_with(command))?;
     Some(&cmd[command.len()..])
   }
 
   pub fn find_command_autocompletion(command: &str) -> Option<&str> {
     let cmd = COMMAND_NAMES
-        .iter()
-        .find(|name| name.starts_with(command))?;
+      .iter()
+      .find(|name| name.starts_with(command))?;
     cmd.split_whitespace().next()
   }
 }

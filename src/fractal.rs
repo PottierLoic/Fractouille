@@ -1,3 +1,4 @@
+use crate::ProgressEvent;
 use crate::complex::Complex;
 use crate::fractal_maths::generate_image;
 use color_eyre::eyre::Result;
@@ -10,7 +11,6 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::ProgressEvent;
 use which;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -201,21 +201,21 @@ impl Fractal {
 
       if which::which("ffmpeg").is_ok() {
         Command::new("ffmpeg")
-            .arg("-framerate")
-            .arg(fps.to_string())
-            .arg("-i")
-            .arg(format!("{}/frame_%04d.png", thread_output_path.display()))
-            .arg("-c:v")
-            .arg("libx264")
-            .arg("-pix_fmt")
-            .arg("yuv420p")
-            .arg("-crf")
-            .arg("18")
-            .arg("video.mp4")
-            .current_dir(&thread_output_path)
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn()?;
+          .arg("-framerate")
+          .arg(fps.to_string())
+          .arg("-i")
+          .arg(format!("{}/frame_%04d.png", thread_output_path.display()))
+          .arg("-c:v")
+          .arg("libx264")
+          .arg("-pix_fmt")
+          .arg("yuv420p")
+          .arg("-crf")
+          .arg("18")
+          .arg("video.mp4")
+          .current_dir(&thread_output_path)
+          .stdout(Stdio::null())
+          .stderr(Stdio::null())
+          .spawn()?;
       }
 
       Ok(thread_output_path)
