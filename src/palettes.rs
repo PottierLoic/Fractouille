@@ -4,8 +4,8 @@ use crate::palette_helpers::{hsv_to_rgb, rgb_to_hsv};
 pub enum InterpolationMode {
   Linear,
   Cosine,
-  HSV,
-  HSVCyclic
+  Hsv,
+  HsvCyclic,
 }
 
 #[derive(Debug, Clone)]
@@ -28,8 +28,8 @@ impl Palette {
     match self.interpolation {
       InterpolationMode::Linear => self.eval_linear(t),
       InterpolationMode::Cosine => self.eval_cosine(t),
-      InterpolationMode::HSV => self.eval_hsv(t),
-      InterpolationMode::HSVCyclic => self.eval_hsv_cyclic(t),
+      InterpolationMode::Hsv => self.eval_hsv(t),
+      InterpolationMode::HsvCyclic => self.eval_hsv_cyclic(t),
     }
   }
 
@@ -37,13 +37,13 @@ impl Palette {
     let n = self.stops.len();
 
     if n == 0 {
-      return (0, 0, 0.0)
+      return (0, 0, 0.0);
     }
     if n == 1 {
-      return (0, 0, 1.0)
+      return (0, 0, 1.0);
     }
 
-    let scaled = t.clamp(0.0, 1.0) * (n - 1) as f64;
+    let scaled = t.rem_euclid(n as f64);
     let i1 = scaled.floor() as usize % n;
     let i2 = (i1 + 1) % n;
     let local_t = scaled - scaled.floor();
@@ -125,7 +125,7 @@ pub fn default_palettes() -> Vec<Palette> {
     Palette {
       stops: vec![(30, 0, 50), (120, 10, 120), (200, 80, 20), (250, 200, 40)],
       interpolation: InterpolationMode::Cosine,
-      cycle_speed: 100.0,
+      cycle_speed: 20.0,
     },
     // 2. Fire palette
     Palette {
@@ -137,7 +137,7 @@ pub fn default_palettes() -> Vec<Palette> {
         (255, 255, 100),
       ],
       interpolation: InterpolationMode::Linear,
-      cycle_speed: 100.0,
+      cycle_speed: 20.0,
     },
     // 3. Ocean palette
     Palette {
@@ -149,7 +149,7 @@ pub fn default_palettes() -> Vec<Palette> {
         (200, 255, 255),
       ],
       interpolation: InterpolationMode::Linear,
-      cycle_speed: 100.0,
+      cycle_speed: 20.0,
     },
     // 4. Ice palette
     Palette {
@@ -161,7 +161,7 @@ pub fn default_palettes() -> Vec<Palette> {
         (10, 30, 120),
       ],
       interpolation: InterpolationMode::Linear,
-      cycle_speed: 90.0,
+      cycle_speed: 20.0,
     },
     // 5. Neon palette
     Palette {
@@ -173,7 +173,7 @@ pub fn default_palettes() -> Vec<Palette> {
         (180, 255, 0),
       ],
       interpolation: InterpolationMode::Linear,
-      cycle_speed: 120.0,
+      cycle_speed: 20.0,
     },
     // 6. Earth palette
     Palette {
@@ -185,7 +185,21 @@ pub fn default_palettes() -> Vec<Palette> {
         (120, 200, 180),
       ],
       interpolation: InterpolationMode::Linear,
-      cycle_speed: 80.0,
+      cycle_speed: 20.0,
+    },
+    // 7. Rainbow
+    Palette {
+      stops: vec![
+        (255, 0, 0),
+        (255, 127, 0),
+        (255, 255, 0),
+        (0, 255, 0),
+        (0, 0, 255),
+        (139, 0, 255),
+        (255, 0, 0),
+      ],
+      interpolation: InterpolationMode::HsvCyclic,
+      cycle_speed: 50.0,
     },
   ]
 }

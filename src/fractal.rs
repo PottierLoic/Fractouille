@@ -309,10 +309,7 @@ impl Fractal {
     }
 
     let palette = &self.palette[self.current_palette];
-    let raw_t = iter / palette.cycle_speed;
-    let t = raw_t.fract();
-
-    let (r, g, b) = palette.eval(t);
+    let (r, g, b) = palette.eval(iter / palette.cycle_speed);
     Rgb([r, g, b])
   }
 }

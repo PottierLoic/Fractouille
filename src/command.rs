@@ -331,8 +331,8 @@ impl CommandProcessor {
                 match parts[2] {
                   "linear" => Command::PaletteMode(InterpolationMode::Linear),
                   "cosine" => Command::PaletteMode(InterpolationMode::Cosine),
-                  "hsv" => Command::PaletteMode(InterpolationMode::HSV),
-                  "hsv_cyclic" => Command::PaletteMode(InterpolationMode::HSVCyclic),
+                  "hsv" => Command::PaletteMode(InterpolationMode::Hsv),
+                  "hsv_cyclic" => Command::PaletteMode(InterpolationMode::HsvCyclic),
                   _ => {
                     Command::Unknown(format!("Unknown palette interpolation mode: {}", parts[2]))
                   }
