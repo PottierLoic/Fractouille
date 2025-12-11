@@ -85,46 +85,41 @@ impl Fractal {
     let top = self.z.im - vh / 2.0;
 
     (0..height)
-        .into_par_iter()
-        .map(|y| {
-          (0..width)
-              .map(|x| {
-                let cx = left + x as f64 * vw / width  as f64;
-                let cy = top  + y as f64 * vh / height as f64;
+      .into_par_iter()
+      .map(|y| {
+        (0..width)
+          .map(|x| {
+            let cx = left + x as f64 * vw / width as f64;
+            let cy = top + y as f64 * vh / height as f64;
 
-                let (z0, c0) = match self.set {
-                  Set::Mandelbrot | Set::BurningShip =>
-                    (Complex::new(0.0, 0.0), Complex::new(cx, cy)),
-                  Set::Julia =>
-                    (Complex::new(cx, cy), self.julia_c),
-                  Set::Phoenix =>
-                    (Complex::new(0.0, 0.0), Complex::new(cy, cx)),
-                };
+            let (z0, c0) = match self.set {
+              Set::Mandelbrot | Set::BurningShip => (Complex::new(0.0, 0.0), Complex::new(cx, cy)),
+              Set::Julia => (Complex::new(cx, cy), self.julia_c),
+              Set::Phoenix => (Complex::new(0.0, 0.0), Complex::new(cy, cx)),
+            };
 
-                let (iter, final_z) = match self.set {
-                  Set::Mandelbrot =>
-                    iterate_mandelbrot(z0, c0, self.max_iterations, self.power),
-                  Set::Julia =>
-                    iterate_julia(z0, c0, self.max_iterations, self.power),
-                  Set::BurningShip =>
-                    iterate_burningship(z0, c0, self.max_iterations),
-                  Set::Phoenix =>
-                    iterate_phoenix(z0, c0, self.phoenix_p, self.max_iterations, self.power),
-                };
+            let (iter, final_z) = match self.set {
+              Set::Mandelbrot => iterate_mandelbrot(z0, c0, self.max_iterations, self.power),
+              Set::Julia => iterate_julia(z0, c0, self.max_iterations, self.power),
+              Set::BurningShip => iterate_burningship(z0, c0, self.max_iterations),
+              Set::Phoenix => {
+                iterate_phoenix(z0, c0, self.phoenix_p, self.max_iterations, self.power)
+              }
+            };
 
-                let value = if smooth && iter < self.max_iterations {
-                  let log_zn = final_z.abs_sq().sqrt().ln().ln();
-                  iter as f64 + SMOOTH_OFFSET - log_zn / LOG2
-                } else {
-                  iter as f64
-                };
+            let value = if smooth && iter < self.max_iterations {
+              let log_zn = final_z.abs_sq().sqrt().ln().ln();
+              iter as f64 + SMOOTH_OFFSET - log_zn / LOG2
+            } else {
+              iter as f64
+            };
 
-                // Return RGB
-                self.colorize(value)
-              })
-              .collect()
-        })
-        .collect()
+            // Return RGB
+            self.colorize(value)
+          })
+          .collect()
+      })
+      .collect()
   }
 
   fn compute(&mut self, area: Rect) {
@@ -290,10 +285,11 @@ impl Fractal {
   }
 }
 
-
 pub fn iterate_mandelbrot(mut z: Complex, c: Complex, max_iter: u32, power: f64) -> (u32, Complex) {
   for i in 0..max_iter {
-    if z.abs_sq() > ESCAPE_RADIUS_SQ { return (i, z); }
+    if z.abs_sq() > ESCAPE_RADIUS_SQ {
+      return (i, z);
+    }
     if power == 2.0 {
       z = z.square().add(c);
     } else {
@@ -305,7 +301,9 @@ pub fn iterate_mandelbrot(mut z: Complex, c: Complex, max_iter: u32, power: f64)
 
 pub fn iterate_julia(mut z: Complex, c: Complex, max_iter: u32, power: f64) -> (u32, Complex) {
   for i in 0..max_iter {
-    if z.abs_sq() > ESCAPE_RADIUS_SQ { return (i, z); }
+    if z.abs_sq() > ESCAPE_RADIUS_SQ {
+      return (i, z);
+    }
     if power == 2.0 {
       z = z.square().add(c);
     } else {
@@ -317,16 +315,26 @@ pub fn iterate_julia(mut z: Complex, c: Complex, max_iter: u32, power: f64) -> (
 
 pub fn iterate_burningship(mut z: Complex, c: Complex, max_iter: u32) -> (u32, Complex) {
   for i in 0..max_iter {
-    if z.abs_sq() > ESCAPE_RADIUS_SQ { return (i, z); }
+    if z.abs_sq() > ESCAPE_RADIUS_SQ {
+      return (i, z);
+    }
     z = z.abs().square().add(c);
   }
   (max_iter, z)
 }
 
-pub fn iterate_phoenix(mut z: Complex, c: Complex, p: Complex, max_iter: u32, power: f64) -> (u32, Complex) {
+pub fn iterate_phoenix(
+  mut z: Complex,
+  c: Complex,
+  p: Complex,
+  max_iter: u32,
+  power: f64,
+) -> (u32, Complex) {
   let mut z_prev = Complex::new(0.0, 0.0);
   for i in 0..max_iter {
-    if z.abs_sq() > ESCAPE_RADIUS_SQ { return (i, z); }
+    if z.abs_sq() > ESCAPE_RADIUS_SQ {
+      return (i, z);
+    }
 
     let z_next = if power == 2.0 {
       z.square().add(c).add(z_prev.mul(p))
