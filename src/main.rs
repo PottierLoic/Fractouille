@@ -4,7 +4,9 @@ mod fractal;
 mod fractal_iterator;
 mod palette;
 
-use crate::command::CommandProcessor;
+use crate::command::{
+  execute_command, find_command_autocompletion, find_command_match, parse_command,
+};
 use crate::fractal::{Fractal, Set};
 use color_eyre::Result;
 use ratatui::layout::Direction;
@@ -83,16 +85,15 @@ impl App {
             }
             KeyCode::Enter => {
               self.command_mode = false;
-              self.command_result =
-                CommandProcessor::execute(self).unwrap_or_else(|err| format!("Error: {}", err));
+              self.command_result = execute_command(self, parse_command(&*self.command_string))
+                .unwrap_or_else(|err| format!("Error: {}", err));
               self.command_string.clear();
             }
             KeyCode::Char(c) => {
               self.command_string.push(c);
             }
             KeyCode::Tab => {
-              let full_command =
-                CommandProcessor::find_command_autocompletion(self.command_string.as_str());
+              let full_command = find_command_autocompletion(self.command_string.as_str());
               if let Some(completion) = full_command {
                 self.command_string = completion.parse()?;
               }
@@ -226,7 +227,7 @@ impl Widget for &mut App {
     if self.command_mode {
       let mut completion_hint = Some("");
       if !self.command_string.is_empty() {
-        completion_hint = CommandProcessor::find_command_match(&self.command_string);
+        completion_hint = find_command_match(&self.command_string);
       }
       Text::from(Line::from(vec![
         Span::styled(
