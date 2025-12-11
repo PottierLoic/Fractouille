@@ -1,68 +1,14 @@
 use crate::complex::Complex;
 use crate::fractal::{Fractal, Set};
-use crate::palettes::{PALETTES, PaletteFn};
+use crate::fractal_iterator::{
+  BurningShipIterator, FractalIterator, MandelbrotIterator, PhoenixIterator,
+};
 use image::Rgb;
 use rayon::prelude::*;
 
 const ESCAPE_RADIUS_SQ: f64 = 4.0;
 const SMOOTH_OFFSET: f64 = 1.0;
 const LOG2: f64 = std::f64::consts::LN_2;
-
-trait FractalIterator: Send + Sync {
-  fn iterate(&self, z: Complex, z_prev: Complex, c: Complex) -> Complex;
-}
-
-struct MandelbrotIterator {
-  power: f64,
-}
-struct BurningShipIterator;
-struct PhoenixIterator {
-  power: f64,
-  c: Complex,
-  p: Complex,
-}
-
-impl FractalIterator for MandelbrotIterator {
-  fn iterate(&self, z: Complex, _z_prev: Complex, c: Complex) -> Complex {
-    if self.power == 2.0 {
-      z.square().add(c)
-    } else {
-      Complex::polar(self.power)(z).add(c)
-    }
-  }
-}
-
-impl FractalIterator for BurningShipIterator {
-  fn iterate(&self, z: Complex, _z_prev: Complex, c: Complex) -> Complex {
-    let abs_z = z.abs();
-    Complex {
-      re: abs_z.re * abs_z.re - abs_z.im * abs_z.im,
-      im: 2.0 * abs_z.re * abs_z.im,
-    }
-    .add(c)
-  }
-}
-
-impl FractalIterator for PhoenixIterator {
-  fn iterate(&self, z: Complex, z_prev: Complex, _c: Complex) -> Complex {
-    let powered_z = if self.power == 2.0 {
-      z.square()
-    } else {
-      Complex::polar(self.power)(z)
-    };
-    powered_z.add(self.c).add(self.p.mul(z_prev))
-  }
-}
-
-fn colorize(iter: f64, max_iter: u32, palette: PaletteFn, color_cycle: f64) -> Rgb<u8> {
-  let (r, g, b) = if iter >= max_iter as f64 {
-    (0, 0, 0)
-  } else {
-    let t = (iter / color_cycle).fract();
-    palette(t)
-  };
-  Rgb([r, g, b])
-}
 
 fn iterate_point(
   iterator: &dyn FractalIterator,
@@ -136,12 +82,7 @@ pub fn generate_image(
 
           let iter = iterate_point(iterator.as_ref(), z, c, fractal.max_iterations, smooth);
 
-          colorize(
-            iter,
-            fractal.max_iterations,
-            PALETTES[fractal.current_palette],
-            fractal.color_cycle,
-          )
+          fractal.colorize(iter)
         })
         .collect()
     })

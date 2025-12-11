@@ -1,8 +1,9 @@
 use crate::ProgressEvent;
 use crate::complex::Complex;
 use crate::fractal_maths::generate_image;
+use crate::palettes::{default_palettes, Palette};
 use color_eyre::eyre::Result;
-use image::RgbImage;
+use image::{Rgb, RgbImage};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Position, Rect};
 use ratatui::prelude::{Color, Widget};
@@ -27,6 +28,7 @@ pub struct Fractal {
   pub scale: f64,
   pub max_iterations: u32,
   pub need_render: bool,
+  pub palette: Vec<Palette>,
   pub current_palette: usize,
   pub set: Set,
   pub julia_c: Complex,
@@ -44,6 +46,7 @@ impl Default for Fractal {
       scale: 1.0,
       max_iterations: 100,
       need_render: true,
+      palette: default_palettes(),
       current_palette: 0,
       set: Set::Mandelbrot,
       julia_c: Complex::new(-0.5251993, -0.5251993),
@@ -221,5 +224,18 @@ impl Fractal {
     });
 
     Ok(output_path)
+  }
+
+  pub fn colorize(&self, iter: f64) -> Rgb<u8> {
+    if iter >= self.max_iterations as f64 {
+      return Rgb([0, 0, 0]);
+    }
+
+    let palette = &self.palette[self.current_palette];
+    let raw_t = iter / palette.cycle_speed;
+    let t = raw_t.fract();
+
+    let (r, g, b) = palette.eval(t);
+    Rgb([r, g, b])
   }
 }

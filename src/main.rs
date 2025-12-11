@@ -1,12 +1,12 @@
 mod command;
 mod complex;
 mod fractal;
+mod fractal_iterator;
 mod fractal_maths;
 mod palettes;
 
 use crate::command::CommandProcessor;
 use crate::fractal::{Fractal, Set};
-use crate::palettes::PALETTES;
 use color_eyre::Result;
 use ratatui::layout::Direction;
 use ratatui::style::{Color, Modifier, Style};
@@ -119,7 +119,7 @@ impl App {
             KeyCode::Char('d') | KeyCode::Right => f.z.re += step,
             KeyCode::Char('w') | KeyCode::Up => f.z.im -= step,
             KeyCode::Char('s') | KeyCode::Down => f.z.im += step,
-            KeyCode::Char(' ') => f.current_palette = (f.current_palette + 1) % PALETTES.len(),
+            // KeyCode::Char(' ') => f.current_palette = (f.current_palette + 1) % PALETTES.len(),
             KeyCode::Enter => {
               f.set = match f.set {
                 Set::Mandelbrot => Set::Julia,

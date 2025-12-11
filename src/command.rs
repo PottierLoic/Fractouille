@@ -18,6 +18,9 @@ enum Command {
   Set(String),
   Record(u32, u32, f64, f64, f64),
   ColorCycle(f64),
+  PaletteCreate(Vec<(u8, u8, u8)>),
+  PaletteUse(usize),
+  PaletteDelete(usize),
   Unknown(String),
 }
 
@@ -36,6 +39,9 @@ static COMMAND_NAMES: &[&str] = &[
   "set <mandelbrot|julia|burningship>",
   "record <w> <h> <start> <end> <speed>",
   "colorcycle <value>",
+  "palette create <r0> <g0> <b0> ... <rn> <gn> <bn>",
+  "palette use <index>",
+  "palette delete <index>",
 ];
 
 pub struct CommandProcessor;
@@ -245,6 +251,77 @@ impl CommandProcessor {
           }
         }
       }
+      "palette" => {
+        if parts.len() < 2 {
+          Command::Unknown(format!(
+            "Usage: palette <create|use|delete> <color>. Got {} arguments",
+            parts.len() - 1
+          ))
+        } else {
+          match parts[1] {
+            "create" => {
+              if (parts.len() - 2) % 3 != 0 {
+                return Command::Unknown(format!(
+                  "Usage: palette create <r0> <g0> <b0> ... <rn> <gn> <bn>. Got {} arguments",
+                  parts.len() - 2
+                ));
+              }
+
+              let mut colors = Vec::new();
+              for chunk in parts[2..].chunks(3) {
+                let r = match chunk[0].parse::<u8>() {
+                  Ok(val) => val,
+                  Err(_) => return Command::Unknown(format!("Invalid red color: {}", chunk[0])),
+                };
+                let g = match chunk[1].parse::<u8>() {
+                  Ok(val) => val,
+                  Err(_) => return Command::Unknown(format!("Invalid red color: {}", chunk[1])),
+                };
+                let b = match chunk[2].parse::<u8>() {
+                  Ok(val) => val,
+                  Err(_) => return Command::Unknown(format!("Invalid red color: {}", chunk[2])),
+                };
+
+                colors.push((r, g, b));
+              }
+              Command::PaletteCreate(colors)
+            }
+            "use" => {
+              if parts.len() != 3 {
+                Command::Unknown(format!(
+                  "Usage: palette use <index>. Got {} arguments",
+                  parts.len() - 1
+                ))
+              } else {
+                let index = match parts[2].parse::<usize>() {
+                  Ok(val) => val,
+                  Err(_) => {
+                    return Command::Unknown(format!("Invalid palette index: {}", parts[2]));
+                  }
+                };
+                Command::PaletteUse(index)
+              }
+            }
+            "delete" => {
+              if parts.len() != 3 {
+                Command::Unknown(format!(
+                  "Usage: palette delete <index>. Got {} arguments",
+                  parts.len() - 1
+                ))
+              } else {
+                let index = match parts[2].parse::<usize>() {
+                  Ok(val) => val,
+                  Err(_) => {
+                    return Command::Unknown(format!("Invalid palette index: {}", parts[2]));
+                  }
+                };
+                Command::PaletteDelete(index)
+              }
+            }
+            _ => Command::Unknown(format!("Unknown palette command: {}", parts[1])),
+          }
+        }
+      }
 
       cmd => Command::Unknown(format!("Unknown command: {}", cmd)),
     }
@@ -341,6 +418,39 @@ impl CommandProcessor {
       Command::ColorCycle(cycle) => {
         app.fractal.color_cycle = cycle;
         Ok(format!("Color cycle updated to {}", cycle))
+      }
+      Command::PaletteCreate(colors) => {
+        todo!();
+        // let palette: Vec<Color> = colors
+        //     .iter()
+        //     .map(|(r, g, b)| Color::Rgb(*r, *g, *b))
+        //     .collect();
+        // // app.fractal.custom_palettes.push(palette);
+        // Ok(format!("Palette inserted at index {}", app.fractal.custom_palettes.len() - 1))
+      }
+      Command::PaletteUse(index) => {
+        todo!();
+        // if app.fractal.custom_palettes.is_empty() {
+        //   return Ok("No custom palettes defined".to_string());
+        // }
+        // if app.fractal.custom_palettes.len() <= index {
+        //   return Ok("Palette index out of range".to_string());
+        // }
+        // app.fractal.current_custom_palette = index;
+        // app.fractal.custom_palettes_enabled = true;
+        // Ok(format!("Palette updated to {}", index))
+      }
+      Command::PaletteDelete(index) => {
+        todo!();
+        // if app.fractal.custom_palettes.is_empty() {
+        //   return Ok("No custom palettes defined".to_string());
+        // }
+        // if app.fractal.custom_palettes.len() <= index {
+        //   return Ok("Palette index out of range".to_string());
+        // }
+        // app.fractal.custom_palettes_enabled = false;
+        // app.fractal.custom_palettes.remove(index);
+        // Ok("Palette deleted".to_string())
       }
       Command::Unknown(msg) => Ok(msg),
     }
