@@ -1,0 +1,45 @@
+use crate::palette::InterpolationMode;
+
+#[derive(Debug)]
+pub enum Command {
+  Move(f64, f64, Option<f64>),
+  Reset,
+  Screenshot(Option<u32>, Option<u32>),
+  Help,
+  Quit,
+  Julia(f64, f64),
+  PhoenixC(f64),
+  PhoenixP(f64, f64),
+  Power(f64),
+  Iterations(u32),
+  Zoom(f64),
+  Set(String),
+  Record(u32, u32, f64, f64, f64),
+  CycleSpeed(f64),
+  PaletteCreate(Vec<(u8, u8, u8)>),
+  PaletteUse(usize),
+  PaletteDelete(usize),
+  PaletteMode(InterpolationMode),
+  Unknown(String),
+}
+
+pub static COMMAND_NAMES: &[&str] = &[
+  "move <x> <y> [zoom]",
+  "reset",
+  "screenshot [width] [height]",
+  "help",
+  "quit",
+  "julia <real> <imag>",
+  "phoenix_c <real>",
+  "phoenix_p <real> <imag>",
+  "power <value>",
+  "iterations <count>",
+  "zoom <level>",
+  "set <mandelbrot|julia|burningship>",
+  "record <w> <h> <start> <end> <speed>",
+  "cycle_speed <value>",
+  "palette create <r0> <g0> <b0> ... <rn> <gn> <bn>",
+  "palette use <index>",
+  "palette delete <index>",
+  "palette mode <linear|cosine|hsv|hsv_cyclic>",
+];
