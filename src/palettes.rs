@@ -12,6 +12,14 @@ pub struct Palette {
 }
 
 impl Palette {
+  pub fn new(stops: Vec<(u8, u8, u8)>, interpolation: InterpolationMode, cycle_speed: f64) -> Self {
+    Palette {
+      stops,
+      interpolation,
+      cycle_speed,
+    }
+  }
+
   pub fn eval(&self, t: f64) -> (u8, u8, u8) {
     match self.interpolation {
       InterpolationMode::Linear => self.eval_linear(t),

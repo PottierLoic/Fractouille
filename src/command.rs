@@ -1,6 +1,7 @@
 use crate::App;
 use crate::fractal::Fractal;
 use color_eyre::Result;
+use crate::palettes::{InterpolationMode, Palette};
 
 #[derive(Debug)]
 enum Command {
@@ -420,37 +421,26 @@ impl CommandProcessor {
         Ok(format!("Color cycle updated to {}", cycle))
       }
       Command::PaletteCreate(colors) => {
-        todo!();
-        // let palette: Vec<Color> = colors
-        //     .iter()
-        //     .map(|(r, g, b)| Color::Rgb(*r, *g, *b))
-        //     .collect();
-        // // app.fractal.custom_palettes.push(palette);
-        // Ok(format!("Palette inserted at index {}", app.fractal.custom_palettes.len() - 1))
+        let palette = Palette::new(colors, InterpolationMode::Linear, 100.0);
+        app.fractal.palette.push(palette);
+        Ok(format!("Palette inserted at index {}", app.fractal.palette.len() - 1))
       }
       Command::PaletteUse(index) => {
-        todo!();
-        // if app.fractal.custom_palettes.is_empty() {
-        //   return Ok("No custom palettes defined".to_string());
-        // }
-        // if app.fractal.custom_palettes.len() <= index {
-        //   return Ok("Palette index out of range".to_string());
-        // }
-        // app.fractal.current_custom_palette = index;
-        // app.fractal.custom_palettes_enabled = true;
-        // Ok(format!("Palette updated to {}", index))
+        if app.fractal.palette.len() <= index {
+          return Ok("Palette index out of range".to_string());
+        }
+        app.fractal.current_palette = index;
+        Ok(format!("Palette updated to {}", index))
       }
       Command::PaletteDelete(index) => {
-        todo!();
-        // if app.fractal.custom_palettes.is_empty() {
-        //   return Ok("No custom palettes defined".to_string());
-        // }
-        // if app.fractal.custom_palettes.len() <= index {
-        //   return Ok("Palette index out of range".to_string());
-        // }
-        // app.fractal.custom_palettes_enabled = false;
-        // app.fractal.custom_palettes.remove(index);
-        // Ok("Palette deleted".to_string())
+        if app.fractal.palette.len() == 1 {
+          return Ok("Cannot delete last palette".to_string());
+        }
+        if app.fractal.palette.len() <= index {
+          return Ok("Palette index out of range".to_string());
+        }
+        app.fractal.palette.remove(index);
+        Ok("Palette deleted".to_string())
       }
       Command::Unknown(msg) => Ok(msg),
     }
