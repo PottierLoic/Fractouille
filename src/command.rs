@@ -416,7 +416,7 @@ impl CommandProcessor {
         }
       }
       Command::ColorCycle(cycle) => {
-        app.fractal.color_cycle = cycle;
+        app.fractal.palette[app.fractal.current_palette].cycle_speed = cycle;
         Ok(format!("Color cycle updated to {}", cycle))
       }
       Command::PaletteCreate(colors) => {
