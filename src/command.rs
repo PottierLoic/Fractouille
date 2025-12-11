@@ -22,7 +22,7 @@ enum Command {
   PaletteCreate(Vec<(u8, u8, u8)>),
   PaletteUse(usize),
   PaletteDelete(usize),
-  PaletteChangeMode(InterpolationMode),
+  PaletteMode(InterpolationMode),
   Unknown(String),
 }
 
@@ -44,7 +44,7 @@ static COMMAND_NAMES: &[&str] = &[
   "palette create <r0> <g0> <b0> ... <rn> <gn> <bn>",
   "palette use <index>",
   "palette delete <index>",
-  "palette changemode <linear|cosine>",
+  "palette mode <linear|cosine>",
 ];
 
 pub struct CommandProcessor;
@@ -321,17 +321,18 @@ impl CommandProcessor {
                 Command::PaletteDelete(index)
               }
             }
-            "changemode" => {
+            "mode" => {
               if parts.len() != 3 {
                 Command::Unknown(format!(
-                  "Usage: palette changemode <linear|cosine>. Got {} arguments",
+                  "Usage: palette mode <linear|cosine|hsv|hsv_cyclic>. Got {} arguments",
                   parts.len() - 1
                 ))
               } else {
                 match parts[2] {
-                  "linear" => Command::PaletteChangeMode(InterpolationMode::Linear),
-                  "cosine" => Command::PaletteChangeMode(InterpolationMode::Cosine),
-                  "hsv" => Command::PaletteChangeMode(InterpolationMode::HSV),
+                  "linear" => Command::PaletteMode(InterpolationMode::Linear),
+                  "cosine" => Command::PaletteMode(InterpolationMode::Cosine),
+                  "hsv" => Command::PaletteMode(InterpolationMode::HSV),
+                  "hsv_cyclic" => Command::PaletteMode(InterpolationMode::HSVCyclic),
                   _ => {
                     Command::Unknown(format!("Unknown palette interpolation mode: {}", parts[2]))
                   }
@@ -464,7 +465,7 @@ impl CommandProcessor {
         app.fractal.palette.remove(index);
         Ok("Palette deleted".to_string())
       }
-      Command::PaletteChangeMode(mode) => {
+      Command::PaletteMode(mode) => {
         app.fractal.palette[app.fractal.current_palette].interpolation = mode;
         Ok(format!(
           "Change interpolation mode of palette {} to {:?}",

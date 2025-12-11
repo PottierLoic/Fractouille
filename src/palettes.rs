@@ -96,7 +96,26 @@ impl Palette {
   }
 
   pub fn eval_hsv_cyclic(&self, t: f64) -> (u8, u8, u8) {
-    todo!()
+    let (i1, i2, local_t) = self.resolve_segment(t);
+
+    let (r1, g1, b1) = self.stops[i1];
+    let (r2, g2, b2) = self.stops[i2];
+
+    let (h1, s1, v1) = rgb_to_hsv(r1, g1, b1);
+    let (h2, s2, v2) = rgb_to_hsv(r2, g2, b2);
+
+    let mut dh = h2 - h1;
+    if dh > 180.0 {
+      dh -= 360.0;
+    } else if dh < -180.0 {
+      dh += 360.0;
+    }
+
+    let h = h1 + dh * local_t.rem_euclid(360.0);
+    let s = s1 + local_t * (s2 - s1);
+    let v = v1 + local_t * (v2 - v1);
+
+    hsv_to_rgb(h, s, v)
   }
 }
 
