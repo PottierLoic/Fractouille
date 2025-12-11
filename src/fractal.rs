@@ -77,27 +77,7 @@ impl Widget for &mut Fractal {
 }
 
 impl Fractal {
-  fn iterate_point(
-    &self,
-    z: Complex,
-    c: Complex,
-    smooth: bool,
-  ) -> f64 {
-    let (iter, final_z) = match self.set {
-      Set::Mandelbrot => iterate_mandelbrot(z, c, self.max_iterations, self.power),
-      Set::Julia => iterate_julia(z, c, self.max_iterations, self.power),
-      Set::BurningShip => iterate_burningship(z, c, self.max_iterations),
-      Set::Phoenix => iterate_phoenix(z, c, self.phoenix_p, self.max_iterations, self.power),
-    };
-
-    if smooth && iter < self.max_iterations {
-      let log_zn = final_z.abs_sq().sqrt().ln().ln();
-      return iter as f64 + SMOOTH_OFFSET - log_zn / LOG2;
-    }
-    iter as f64
-  }
-
-  pub fn generate_image(&self, width: u32, height: u32, smooth: bool) -> Vec<Vec<Rgb<u8>>> {
+  fn render_frame(&self, width: u32, height: u32, smooth: bool) -> Vec<Vec<Rgb<u8>>> {
     let aspect = width as f64 / height as f64;
     let vw = 3.5 / self.scale;
     let vh = vw / aspect;
@@ -105,30 +85,46 @@ impl Fractal {
     let top = self.z.im - vh / 2.0;
 
     (0..height)
-      .into_par_iter()
-      .map(|y| {
-        (0..width)
-          .map(|x| {
-            let cx = left + x as f64 * vw / width as f64;
-            let cy = top + y as f64 * vh / height as f64;
-            let (z, c) = match self.set {
-              Set::Mandelbrot | Set::BurningShip => (Complex::new(0.0, 0.0), Complex::new(cx, cy)),
-              Set::Julia => (
-                Complex::new(cx, cy),
-                Complex::new(self.julia_c.re, self.julia_c.im),
-              ),
-              Set::Phoenix => {
-                (Complex::new(cy, cx), Complex::new(0.0, 0.0)) // WTF is it rotated ??? TODO
-              }
-            };
+        .into_par_iter()
+        .map(|y| {
+          (0..width)
+              .map(|x| {
+                let cx = left + x as f64 * vw / width  as f64;
+                let cy = top  + y as f64 * vh / height as f64;
 
-            let iter = self.iterate_point(z, c, smooth);
+                let (z0, c0) = match self.set {
+                  Set::Mandelbrot | Set::BurningShip =>
+                    (Complex::new(0.0, 0.0), Complex::new(cx, cy)),
+                  Set::Julia =>
+                    (Complex::new(cx, cy), self.julia_c),
+                  Set::Phoenix =>
+                    (Complex::new(0.0, 0.0), Complex::new(cy, cx)),
+                };
 
-            self.colorize(iter)
-          })
-          .collect()
-      })
-      .collect()
+                let (iter, final_z) = match self.set {
+                  Set::Mandelbrot =>
+                    iterate_mandelbrot(z0, c0, self.max_iterations, self.power),
+                  Set::Julia =>
+                    iterate_julia(z0, c0, self.max_iterations, self.power),
+                  Set::BurningShip =>
+                    iterate_burningship(z0, c0, self.max_iterations),
+                  Set::Phoenix =>
+                    iterate_phoenix(z0, c0, self.phoenix_p, self.max_iterations, self.power),
+                };
+
+                let value = if smooth && iter < self.max_iterations {
+                  let log_zn = final_z.abs_sq().sqrt().ln().ln();
+                  iter as f64 + SMOOTH_OFFSET - log_zn / LOG2
+                } else {
+                  iter as f64
+                };
+
+                // Return RGB
+                self.colorize(value)
+              })
+              .collect()
+        })
+        .collect()
   }
 
   fn compute(&mut self, area: Rect) {
@@ -136,7 +132,7 @@ impl Fractal {
     if self.colors.len() == h && self.colors[0].len() == w && !self.need_render {
       return;
     }
-    let raw_colors = self.generate_image(w as u32, h as u32, false);
+    let raw_colors = self.render_frame(w as u32, h as u32, false);
     self.colors = raw_colors
       .into_iter()
       .map(|row| {
@@ -168,7 +164,7 @@ impl Fractal {
 
     thread::spawn(move || -> Result<PathBuf> {
       let mut img = RgbImage::new(width, height);
-      let colors = fractal.generate_image(width, height, true);
+      let colors = fractal.render_frame(width, height, true);
 
       for (y, row) in colors.iter().enumerate() {
         for (x, pixel) in row.iter().enumerate() {
@@ -242,7 +238,7 @@ impl Fractal {
         let scale = start_scale * (end_scale / start_scale).powf(t);
         thread_fractal.scale = scale;
 
-        let colors = thread_fractal.generate_image(width, height, true);
+        let colors = thread_fractal.render_frame(width, height, true);
         let mut img = RgbImage::new(width, height);
         for (y, row) in colors.iter().enumerate() {
           for (x, pixel) in row.iter().enumerate() {
