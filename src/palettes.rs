@@ -45,7 +45,7 @@ impl Palette {
     let frac = scaled - i as f64;
 
     let (r1, g1, b1) = self.stops[i];
-    let (r2, g2, b2) = self.stops[(i + 1).min(n - 1)];
+    let (r2, g2, b2) = self.stops[i + 1];
 
     let r = r1 as f64 + frac * (r2 as f64 - r1 as f64);
     let g = g1 as f64 + frac * (g2 as f64 - g1 as f64);
@@ -55,7 +55,32 @@ impl Palette {
   }
 
   pub fn eval_cosine(&self, t: f64) -> (u8, u8, u8) {
-    todo!();
+    let n = self.stops.len();
+
+    // no stops should never happen
+    if n == 0 {
+      return (0, 0, 0);
+    }
+
+    // only one color
+    if n == 1 {
+      return self.stops[0];
+    }
+
+    let scaled = t.clamp(0.0, 1.0) * (n - 1) as f64;
+    let i = scaled.floor() as usize;
+    let frac = scaled - i as f64;
+
+    let mu = (1.0 - (std::f64::consts::PI * frac).cos()) / 2.0;
+
+    let (r1, g1, b1) = self.stops[i];
+    let (r2, g2, b2) = self.stops[i + 1];
+
+    let r = r1 as f64 * (1.0 - mu) + r2 as f64 * mu;
+    let g = g1 as f64 * (1.0 - mu) + g2 as f64 * mu;
+    let b = b1 as f64 * (1.0 - mu) + b2 as f64 * mu;
+
+    (r as u8, g as u8, b as u8)
   }
 }
 
@@ -64,7 +89,7 @@ pub fn default_palettes() -> Vec<Palette> {
     // 1. Default polynomial-like approximation
     Palette {
       stops: vec![(30, 0, 50), (120, 10, 120), (200, 80, 20), (250, 200, 40)],
-      interpolation: InterpolationMode::Linear,
+      interpolation: InterpolationMode::Cosine,
       cycle_speed: 100.0,
     },
     // 2. Fire palette

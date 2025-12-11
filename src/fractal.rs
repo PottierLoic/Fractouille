@@ -101,10 +101,9 @@ impl Fractal {
 
     if smooth && i < self.max_iterations {
       let log_zn = z.abs_sq().sqrt().ln().ln();
-      i as f64 + SMOOTH_OFFSET - log_zn / LOG2
-    } else {
-      i as f64
+      return i as f64 + SMOOTH_OFFSET - log_zn / LOG2;
     }
+    i as f64
   }
 
   pub fn generate_image(&self, width: u32, height: u32, smooth: bool) -> Vec<Vec<Rgb<u8>>> {

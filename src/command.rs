@@ -1,7 +1,7 @@
 use crate::App;
 use crate::fractal::Fractal;
-use color_eyre::Result;
 use crate::palettes::{InterpolationMode, Palette};
+use color_eyre::Result;
 
 #[derive(Debug)]
 enum Command {
@@ -22,6 +22,7 @@ enum Command {
   PaletteCreate(Vec<(u8, u8, u8)>),
   PaletteUse(usize),
   PaletteDelete(usize),
+  PaletteChangeMode(InterpolationMode),
   Unknown(String),
 }
 
@@ -43,6 +44,7 @@ static COMMAND_NAMES: &[&str] = &[
   "palette create <r0> <g0> <b0> ... <rn> <gn> <bn>",
   "palette use <index>",
   "palette delete <index>",
+  "palette changemode <linear|cosine>",
 ];
 
 pub struct CommandProcessor;
@@ -319,6 +321,22 @@ impl CommandProcessor {
                 Command::PaletteDelete(index)
               }
             }
+            "changemode" => {
+              if parts.len() != 3 {
+                Command::Unknown(format!(
+                  "Usage: palette changemode <linear|cosine>. Got {} arguments",
+                  parts.len() - 1
+                ))
+              } else {
+                match parts[2] {
+                  "linear" => Command::PaletteChangeMode(InterpolationMode::Linear),
+                  "cosine" => Command::PaletteChangeMode(InterpolationMode::Cosine),
+                  _ => {
+                    Command::Unknown(format!("Unknown palette interpolation mode: {}", parts[3]))
+                  }
+                }
+              }
+            }
             _ => Command::Unknown(format!("Unknown palette command: {}", parts[1])),
           }
         }
@@ -423,7 +441,10 @@ impl CommandProcessor {
       Command::PaletteCreate(colors) => {
         let palette = Palette::new(colors, InterpolationMode::Linear, 100.0);
         app.fractal.palette.push(palette);
-        Ok(format!("Palette inserted at index {}", app.fractal.palette.len() - 1))
+        Ok(format!(
+          "Palette inserted at index {}",
+          app.fractal.palette.len() - 1
+        ))
       }
       Command::PaletteUse(index) => {
         if app.fractal.palette.len() <= index {
@@ -441,6 +462,14 @@ impl CommandProcessor {
         }
         app.fractal.palette.remove(index);
         Ok("Palette deleted".to_string())
+      }
+      Command::PaletteChangeMode(mode) => {
+        app.fractal.palette[app.fractal.current_palette].interpolation = mode;
+        Ok(format!(
+          "Change interpolation mode of palette {} to {:?}",
+          app.fractal.current_palette,
+          app.fractal.palette[app.fractal.current_palette].interpolation
+        ))
       }
       Command::Unknown(msg) => Ok(msg),
     }
