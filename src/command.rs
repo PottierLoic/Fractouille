@@ -1,6 +1,6 @@
 use crate::App;
 use crate::fractal::Fractal;
-use crate::palettes::{InterpolationMode, Palette};
+use crate::palette::{InterpolationMode, Palette};
 use color_eyre::Result;
 
 #[derive(Debug)]

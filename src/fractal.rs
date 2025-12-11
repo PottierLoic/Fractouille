@@ -3,7 +3,7 @@ use crate::complex::Complex;
 use crate::fractal_iterator::{
   BurningShipIterator, FractalIterator, MandelbrotIterator, PhoenixIterator,
 };
-use crate::palettes::{Palette, default_palettes};
+use crate::palette::{Palette, default_palettes};
 use color_eyre::eyre::Result;
 use image::{Rgb, RgbImage};
 use ratatui::buffer::Buffer;
