@@ -7,7 +7,7 @@ Everything is saved in the `pictures` folder of your OS.
 # Speed parameter
 
 The `speed` parameter defines how fast the zoom progresses in logarithmic space.  
-Because fractal zooming is exponential, constant-speed zoom is obtained by changing the scale by a fixed multiplier per second rather than by a fixed amount. In practice, the most useful and visually readable choice is to make the zoom level **double every second**.
+Because fractal zooming is exponential, constant-speed zoom is obtained by changing the scale by a fixed multiplier per second rather than by a fixed amount. In practice, the most useful and visually readable choice is to make the zoom level **double every second** (in my opinion).
 
 This corresponds to a `zoom_speed` value of `ln(2) ≈ 0.693147`, meaning that the zoom grows by a factor of 2 per second, independently of the framerate or output resolution.
 
