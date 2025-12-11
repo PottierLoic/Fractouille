@@ -1,5 +1,6 @@
-use crate::App;
+use crate::app::App;
 use crate::command::Command;
+use crate::export::{save_image, save_video};
 use crate::fractal::Fractal;
 use crate::palette::{InterpolationMode, Palette};
 use color_eyre::Result;
@@ -12,15 +13,15 @@ pub fn execute_command(app: &mut App, cmd: Command) -> Result<String> {
       if let Some(zoom) = zoom {
         app.fractal.scale = zoom;
       }
-      app.fractal.need_render = true;
+      app.fractal_view.need_render = true;
       Ok("Position and zoom updated".to_string())
     }
     Command::Reset => {
       app.fractal = Fractal::default();
-      app.fractal.need_render = true;
+      app.fractal_view.need_render = true;
       Ok("Fractal reset to default state".to_string())
     }
-    Command::Screenshot(width, height) => match app.fractal.save_screenshot(width, height) {
+    Command::Screenshot(width, height) => match save_image(&app.fractal, width, height) {
       Ok(path) => Ok(format!("Screenshot saved in {}", path.display())),
       Err(e) => Ok(format!("Failed to save screenshot: {}", e)),
     },
@@ -35,7 +36,7 @@ pub fn execute_command(app: &mut App, cmd: Command) -> Result<String> {
     Command::Julia(real, imag) => {
       app.fractal.julia_c.re = real;
       app.fractal.julia_c.im = imag;
-      app.fractal.need_render = true;
+      app.fractal_view.need_render = true;
       Ok(format!(
         "Julia set constant updated to {} + {}i",
         real, imag
@@ -55,17 +56,17 @@ pub fn execute_command(app: &mut App, cmd: Command) -> Result<String> {
     }
     Command::Power(power) => {
       app.fractal.power = power;
-      app.fractal.need_render = true;
+      app.fractal_view.need_render = true;
       Ok(format!("Fractal power updated to {}", power))
     }
     Command::Iterations(count) => {
       app.fractal.max_iterations = count;
-      app.fractal.need_render = true;
+      app.fractal_view.need_render = true;
       Ok(format!("Max iterations updated to {}", count))
     }
     Command::Zoom(zoom_level) => {
       app.fractal.scale = zoom_level;
-      app.fractal.need_render = true;
+      app.fractal_view.need_render = true;
       Ok(format!("Zoomed to {}", zoom_level))
     }
     Command::Set(set) => {
@@ -76,7 +77,7 @@ pub fn execute_command(app: &mut App, cmd: Command) -> Result<String> {
         "phoenix" => app.fractal.set = crate::fractal::Set::Phoenix,
         &_ => (),
       }
-      app.fractal.need_render = true;
+      app.fractal_view.need_render = true;
       Ok(format!("Switched to {} set", set).to_string())
     }
     Command::Record(width, height, start, end, speed) => {
@@ -84,10 +85,7 @@ pub fn execute_command(app: &mut App, cmd: Command) -> Result<String> {
       app.progress_rx = Some(rx);
       app.show_record_popup = true;
       app.record_progress = 0.0;
-      match app
-        .fractal
-        .record_zoom(width, height, start, end, speed, tx)
-      {
+      match save_video(&app.fractal, width, height, start, end, speed, tx) {
         Ok(path) => Ok(format!("Record frames saved in {}", path.display())),
         Err(e) => Ok(format!("Failed to save record frames: {}", e)),
       }
