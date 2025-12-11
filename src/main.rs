@@ -1,7 +1,6 @@
 mod command;
 mod complex;
 mod fractal;
-mod fractal_iterator;
 mod palette;
 
 use crate::command::{

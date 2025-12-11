@@ -1,8 +1,5 @@
 use crate::ProgressEvent;
 use crate::complex::Complex;
-use crate::fractal_iterator::{
-  BurningShipIterator, FractalIterator, MandelbrotIterator, PhoenixIterator,
-};
 use crate::palette::{Palette, default_palettes};
 use color_eyre::eyre::Result;
 use image::{Rgb, RgbImage};
@@ -82,26 +79,22 @@ impl Widget for &mut Fractal {
 impl Fractal {
   fn iterate_point(
     &self,
-    iterator: &dyn FractalIterator,
-    mut z: Complex,
+    z: Complex,
     c: Complex,
     smooth: bool,
   ) -> f64 {
-    let mut z_prev = Complex::new(0.0, 0.0);
-    let mut i = 0;
+    let (iter, final_z) = match self.set {
+      Set::Mandelbrot => iterate_mandelbrot(z, c, self.max_iterations, self.power),
+      Set::Julia => iterate_julia(z, c, self.max_iterations, self.power),
+      Set::BurningShip => iterate_burningship(z, c, self.max_iterations),
+      Set::Phoenix => iterate_phoenix(z, c, self.phoenix_p, self.max_iterations, self.power),
+    };
 
-    while z.abs_sq() <= ESCAPE_RADIUS_SQ && i < self.max_iterations {
-      let temp_z = z;
-      z = iterator.iterate(z, z_prev, c);
-      z_prev = temp_z;
-      i += 1;
+    if smooth && iter < self.max_iterations {
+      let log_zn = final_z.abs_sq().sqrt().ln().ln();
+      return iter as f64 + SMOOTH_OFFSET - log_zn / LOG2;
     }
-
-    if smooth && i < self.max_iterations {
-      let log_zn = z.abs_sq().sqrt().ln().ln();
-      return i as f64 + SMOOTH_OFFSET - log_zn / LOG2;
-    }
-    i as f64
+    iter as f64
   }
 
   pub fn generate_image(&self, width: u32, height: u32, smooth: bool) -> Vec<Vec<Rgb<u8>>> {
@@ -110,17 +103,6 @@ impl Fractal {
     let vh = vw / aspect;
     let left = self.z.re - vw / 2.0;
     let top = self.z.im - vh / 2.0;
-
-    let iterator: Box<dyn FractalIterator + Send + Sync> = match self.set {
-      Set::Mandelbrot => Box::new(MandelbrotIterator { power: self.power }),
-      Set::BurningShip => Box::new(BurningShipIterator),
-      Set::Julia => Box::new(MandelbrotIterator { power: self.power }),
-      Set::Phoenix => Box::new(PhoenixIterator {
-        power: self.power,
-        c: self.phoenix_c,
-        p: self.phoenix_p,
-      }),
-    };
 
     (0..height)
       .into_par_iter()
@@ -140,7 +122,7 @@ impl Fractal {
               }
             };
 
-            let iter = self.iterate_point(iterator.as_ref(), z, c, smooth);
+            let iter = self.iterate_point(z, c, smooth);
 
             self.colorize(iter)
           })
@@ -310,4 +292,54 @@ impl Fractal {
     let (r, g, b) = palette.eval(iter / palette.cycle_speed);
     Rgb([r, g, b])
   }
+}
+
+
+pub fn iterate_mandelbrot(mut z: Complex, c: Complex, max_iter: u32, power: f64) -> (u32, Complex) {
+  for i in 0..max_iter {
+    if z.abs_sq() > ESCAPE_RADIUS_SQ { return (i, z); }
+    if power == 2.0 {
+      z = z.square().add(c);
+    } else {
+      z = Complex::polar(power)(z).add(c);
+    }
+  }
+  (max_iter, z)
+}
+
+pub fn iterate_julia(mut z: Complex, c: Complex, max_iter: u32, power: f64) -> (u32, Complex) {
+  for i in 0..max_iter {
+    if z.abs_sq() > ESCAPE_RADIUS_SQ { return (i, z); }
+    if power == 2.0 {
+      z = z.square().add(c);
+    } else {
+      z = Complex::polar(power)(z).add(c);
+    }
+  }
+  (max_iter, z)
+}
+
+pub fn iterate_burningship(mut z: Complex, c: Complex, max_iter: u32) -> (u32, Complex) {
+  for i in 0..max_iter {
+    if z.abs_sq() > ESCAPE_RADIUS_SQ { return (i, z); }
+    z = z.abs().square().add(c);
+  }
+  (max_iter, z)
+}
+
+pub fn iterate_phoenix(mut z: Complex, c: Complex, p: Complex, max_iter: u32, power: f64) -> (u32, Complex) {
+  let mut z_prev = Complex::new(0.0, 0.0);
+  for i in 0..max_iter {
+    if z.abs_sq() > ESCAPE_RADIUS_SQ { return (i, z); }
+
+    let z_next = if power == 2.0 {
+      z.square().add(c).add(z_prev.mul(p))
+    } else {
+      Complex::polar(power)(z).add(c).add(z_prev.mul(p))
+    };
+
+    z_prev = z;
+    z = z_next;
+  }
+  (max_iter, z)
 }
