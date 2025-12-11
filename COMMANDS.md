@@ -41,5 +41,17 @@ This is a list of all the available commands in Fractouille. They can be entered
 - `record <width> <height> <start> <end> <speed>`
   Record frames of specified size from `start` to `end` zoom level. Can then be used to make a video using external tools.
 
-- `colorcycle <n>`
-  Set the `colorcycle` value to `n`, it controls the speed at which the palette will cycle through colors.
+- `cycle_speed <n>`
+  Set the `cycle_speed` value of current palette  to `n`, it controls the speed at which the palette will cycle through colors.
+
+- `palette create <r0> <g0> <b0> ... <rn> <gn> <bn>`
+  Creates a new custom palette from a list of RGB triplets. Each color is three integers (0–255). The palette is appended to the palette list and its index is returned.
+
+- `palette use <index>`
+  Sets the active palette to the palette at the given index.
+
+- `palette delete <index>`
+  Deletes the palette at the given index. The last remaining palette cannot be deleted.
+
+- `palette mode <linear|cosine|hsv|hsv_cyclic>`
+  Changes the interpolation mode of the currently active palette.

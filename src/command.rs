@@ -18,7 +18,7 @@ enum Command {
   Zoom(f64),
   Set(String),
   Record(u32, u32, f64, f64, f64),
-  ColorCycle(f64),
+  CycleSpeed(f64),
   PaletteCreate(Vec<(u8, u8, u8)>),
   PaletteUse(usize),
   PaletteDelete(usize),
@@ -40,11 +40,11 @@ static COMMAND_NAMES: &[&str] = &[
   "zoom <level>",
   "set <mandelbrot|julia|burningship>",
   "record <w> <h> <start> <end> <speed>",
-  "colorcycle <value>",
+  "cycle_speed <value>",
   "palette create <r0> <g0> <b0> ... <rn> <gn> <bn>",
   "palette use <index>",
   "palette delete <index>",
-  "palette mode <linear|cosine>",
+  "palette mode <linear|cosine|hsv|hsv_cyclic>",
 ];
 
 pub struct CommandProcessor;
@@ -241,15 +241,15 @@ impl CommandProcessor {
           Command::Record(width, height, start, end, speed)
         }
       }
-      "colorcycle" => {
+      "cycle_speed" => {
         if parts.len() != 2 {
           Command::Unknown(format!(
-            "Usage: colorcycle <cycle value>. Got {} arguments",
+            "Usage: cycle_speed <cycle value>. Got {} arguments",
             parts.len() - 1
           ))
         } else {
           match parts[1].parse::<f64>() {
-            Ok(val) => Command::ColorCycle(val),
+            Ok(val) => Command::CycleSpeed(val),
             Err(_) => Command::Unknown(format!("Invalid cycle value: {}", parts[1])),
           }
         }
@@ -436,7 +436,7 @@ impl CommandProcessor {
           Err(e) => Ok(format!("Failed to save record frames: {}", e)),
         }
       }
-      Command::ColorCycle(cycle) => {
+      Command::CycleSpeed(cycle) => {
         app.fractal.palette[app.fractal.current_palette].cycle_speed = cycle;
         Ok(format!("Color cycle updated to {}", cycle))
       }

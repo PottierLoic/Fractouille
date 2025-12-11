@@ -43,7 +43,6 @@ pub struct Fractal {
   pub phoenix_c: Complex,
   pub phoenix_p: Complex,
   pub power: f64,
-  pub color_cycle: f64,
 }
 
 impl Default for Fractal {
@@ -61,7 +60,6 @@ impl Default for Fractal {
       phoenix_c: Complex::new(0.0, 0.0),
       phoenix_p: Complex::new(-0.5, 0.0),
       power: 2.0,
-      color_cycle: 100.0,
     }
   }
 }
