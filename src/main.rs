@@ -3,6 +3,7 @@ mod complex;
 mod fractal;
 mod fractal_iterator;
 mod palettes;
+mod palette_helpers;
 
 use crate::command::CommandProcessor;
 use crate::fractal::{Fractal, Set};

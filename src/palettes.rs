@@ -1,7 +1,11 @@
+use crate::palette_helpers::{hsv_to_rgb, rgb_to_hsv};
+
 #[derive(Debug, Clone)]
 pub enum InterpolationMode {
   Linear,
   Cosine,
+  HSV,
+  HSVCyclic
 }
 
 #[derive(Debug, Clone)]
@@ -24,63 +28,75 @@ impl Palette {
     match self.interpolation {
       InterpolationMode::Linear => self.eval_linear(t),
       InterpolationMode::Cosine => self.eval_cosine(t),
+      InterpolationMode::HSV => self.eval_hsv(t),
+      InterpolationMode::HSVCyclic => self.eval_hsv_cyclic(t),
     }
   }
 
-  pub fn eval_linear(&self, t: f64) -> (u8, u8, u8) {
+  pub fn resolve_segment(&self, t: f64) -> (usize, usize, f64) {
     let n = self.stops.len();
 
-    // no stops should never happen
     if n == 0 {
-      return (0, 0, 0);
+      return (0, 0, 0.0)
     }
-
-    // only one color
     if n == 1 {
-      return self.stops[0];
+      return (0, 0, 1.0)
     }
 
     let scaled = t.clamp(0.0, 1.0) * (n - 1) as f64;
-    let i = scaled.floor() as usize;
-    let frac = scaled - i as f64;
+    let i1 = scaled.floor() as usize % n;
+    let i2 = (i1 + 1) % n;
+    let local_t = scaled - scaled.floor();
 
-    let (r1, g1, b1) = self.stops[i];
-    let (r2, g2, b2) = self.stops[i + 1];
+    (i1, i2, local_t)
+  }
 
-    let r = r1 as f64 + frac * (r2 as f64 - r1 as f64);
-    let g = g1 as f64 + frac * (g2 as f64 - g1 as f64);
-    let b = b1 as f64 + frac * (b2 as f64 - b1 as f64);
+  pub fn eval_linear(&self, t: f64) -> (u8, u8, u8) {
+    let (i1, i2, local_t) = self.resolve_segment(t);
+
+    let (r1, g1, b1) = self.stops[i1];
+    let (r2, g2, b2) = self.stops[i2];
+
+    let r = r1 as f64 + local_t * (r2 as f64 - r1 as f64);
+    let g = g1 as f64 + local_t * (g2 as f64 - g1 as f64);
+    let b = b1 as f64 + local_t * (b2 as f64 - b1 as f64);
 
     (r as u8, g as u8, b as u8)
   }
 
   pub fn eval_cosine(&self, t: f64) -> (u8, u8, u8) {
-    let n = self.stops.len();
+    let (i1, i2, local_t) = self.resolve_segment(t);
 
-    // no stops should never happen
-    if n == 0 {
-      return (0, 0, 0);
-    }
+    let (r1, g1, b1) = self.stops[i1];
+    let (r2, g2, b2) = self.stops[i2];
 
-    // only one color
-    if n == 1 {
-      return self.stops[0];
-    }
-
-    let scaled = t.clamp(0.0, 1.0) * (n - 1) as f64;
-    let i = scaled.floor() as usize;
-    let frac = scaled - i as f64;
-
-    let mu = (1.0 - (std::f64::consts::PI * frac).cos()) / 2.0;
-
-    let (r1, g1, b1) = self.stops[i];
-    let (r2, g2, b2) = self.stops[i + 1];
+    let mu = (1.0 - (std::f64::consts::PI * local_t).cos()) / 2.0;
 
     let r = r1 as f64 * (1.0 - mu) + r2 as f64 * mu;
     let g = g1 as f64 * (1.0 - mu) + g2 as f64 * mu;
     let b = b1 as f64 * (1.0 - mu) + b2 as f64 * mu;
 
     (r as u8, g as u8, b as u8)
+  }
+
+  pub fn eval_hsv(&self, t: f64) -> (u8, u8, u8) {
+    let (i1, i2, local_t) = self.resolve_segment(t);
+
+    let (r1, g1, b1) = self.stops[i1];
+    let (r2, g2, b2) = self.stops[i2];
+
+    let (h1, s1, v1) = rgb_to_hsv(r1, g1, b1);
+    let (h2, s2, v2) = rgb_to_hsv(r2, g2, b2);
+
+    let h = h1 + local_t * (h2 - h1);
+    let s = s1 + local_t * (s2 - s1);
+    let v = v1 + local_t * (v2 - v1);
+
+    hsv_to_rgb(h, s, v)
+  }
+
+  pub fn eval_hsv_cyclic(&self, t: f64) -> (u8, u8, u8) {
+    todo!()
   }
 }
 
