@@ -1,5 +1,4 @@
 use crate::complex::Complex;
-
 pub trait FractalIterator: Send + Sync {
   fn iterate(&self, z: Complex, z_prev: Complex, c: Complex) -> Complex;
 }
