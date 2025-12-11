@@ -3,4 +3,6 @@ mod interpolation;
 mod palette;
 mod utils;
 
-pub use self::{defaults::default_palettes, interpolation::InterpolationMode, palette::Palette};
+pub use defaults::default_palettes;
+pub use interpolation::InterpolationMode;
+pub use palette::Palette;
