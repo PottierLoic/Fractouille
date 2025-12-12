@@ -92,6 +92,7 @@ pub fn execute_command(app: &mut App, cmd: Command) -> Result<String> {
     }
     Command::CycleSpeed(cycle) => {
       app.fractal.palette[app.fractal.current_palette].cycle_speed = cycle;
+      app.fractal_view.need_render = true;
       Ok(format!("Color cycle updated to {}", cycle))
     }
     Command::PaletteCreate(colors) => {
