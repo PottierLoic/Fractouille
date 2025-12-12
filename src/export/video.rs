@@ -1,7 +1,7 @@
 use crate::app::ProgressEvent;
 use crate::fractal::Fractal;
-use color_eyre::eyre::Result;
-use image::RgbImage;
+use color_eyre::eyre::{Result, eyre};
+use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{
   fs,
@@ -30,15 +30,14 @@ pub fn save_video(
     .unwrap_or_default()
     .as_secs();
 
-  let default_dir = format!("fractouille_records/zoom_{}", timestamp);
-  let output_path = base_dir.join(default_dir);
+  let output_path = base_dir.join("fractouille");
 
   fs::create_dir_all(&output_path).map_err(|e| e.to_string())?;
 
   let thread_output_path = output_path.clone();
 
   thread::spawn(move || -> Result<PathBuf> {
-    let fps = 30.0;
+    let fps = 60.0;
 
     let total_frames = ((end_scale.ln() - start_scale.ln()).abs() / zoom_speed * fps).ceil() as u32;
 
@@ -46,6 +45,38 @@ pub fn save_video(
       let _ = progress_tx.send(ProgressEvent::Finished);
       return Ok(thread_output_path);
     }
+
+    let mut ffmpeg = Command::new("ffmpeg")
+      .args([
+        "-y",
+        "-f",
+        "rawvideo",
+        "-pixel_format",
+        "rgb24",
+        "-video_size",
+        &format!("{}x{}", width, height),
+        "-framerate",
+        &fps.to_string(),
+        "-i",
+        "-",
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-crf",
+        "18",
+        &format!("{}.mp4", timestamp),
+      ])
+      .current_dir(&thread_output_path)
+      .stdin(Stdio::piped())
+      .stdout(Stdio::null())
+      .stderr(Stdio::null())
+      .spawn()?;
+
+    let mut stdin = ffmpeg
+      .stdin
+      .take()
+      .ok_or_else(|| eyre!("Failed to open ffmpeg stdin"))?;
 
     let mut thread_fractal = fractal;
 
@@ -55,44 +86,19 @@ pub fn save_video(
 
       let colors = thread_fractal.render_frame(width, height, true);
 
-      let mut img = RgbImage::new(width, height);
-
-      for (y, row) in colors.iter().enumerate() {
-        for (x, pixel) in row.iter().enumerate() {
-          img.put_pixel(x as u32, y as u32, *pixel);
+      for row in &colors {
+        for pixel in row {
+          stdin.write_all(&[pixel[0], pixel[1], pixel[2]])?;
         }
       }
-
-      let frame_path = thread_output_path.join(format!("frame_{:04}.png", frame));
-
-      img
-        .save(&frame_path)
-        .map_err(|e| color_eyre::eyre::eyre!("Failed to save frame: {}", e))?;
 
       let _ = progress_tx.send(ProgressEvent::Progress(frame as f64 / total_frames as f64));
     }
 
+    drop(stdin);
+    ffmpeg.wait()?;
+
     let _ = progress_tx.send(ProgressEvent::Finished);
-
-    if which::which("ffmpeg").is_ok() {
-      Command::new("ffmpeg")
-        .arg("-framerate")
-        .arg(fps.to_string())
-        .arg("-i")
-        .arg(format!("{}/frame_%04d.png", thread_output_path.display()))
-        .arg("-c:v")
-        .arg("libx264")
-        .arg("-pix_fmt")
-        .arg("yuv420p")
-        .arg("-crf")
-        .arg("18")
-        .arg("video.mp4")
-        .current_dir(&thread_output_path)
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()?;
-    }
-
     Ok(thread_output_path)
   });
 

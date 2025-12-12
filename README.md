@@ -44,9 +44,10 @@ fractouille
 Just like in Vim, press `:` to enter command mode. 
 A list of all available commands can be found by in the `COMMANDS.md` file.
 
-# Screenshots
+# Screenshots or records
 
-Screenshots are automatically saved to your system's Pictures folder inside of `fractouille_screenshots`.
+Screenshots and records are automatically saved to your system's Pictures folder inside of `fractouille`.
+Recording need `ffmpeg` to be installed on your system, more information can be found in the `RECORD.md` file.
 
 Here are some screenshots:
 ![](museum/mandelbrot.png)

@@ -17,7 +17,7 @@ pub fn save_image(
     .or_else(dirs::home_dir)
     .ok_or_else(|| "Could not determine user directory".to_string())?;
 
-  let screenshots_dir = base_dir.join("fractouille_screenshots");
+  let screenshots_dir = base_dir.join("fractouille");
   fs::create_dir_all(&screenshots_dir).map_err(|e| e.to_string())?;
 
   let thread_screenshots_dir = screenshots_dir.clone();
