@@ -86,11 +86,17 @@ pub fn save_video(
 
       let colors = thread_fractal.render_frame(width, height, true);
 
+      let mut frame_buffer = Vec::with_capacity((width * height * 3) as usize);
+
       for row in &colors {
         for pixel in row {
-          stdin.write_all(&[pixel[0], pixel[1], pixel[2]])?;
+          frame_buffer.push(pixel[0]);
+          frame_buffer.push(pixel[1]);
+          frame_buffer.push(pixel[2]);
         }
       }
+
+      stdin.write_all(&frame_buffer)?;
 
       let _ = progress_tx.send(ProgressEvent::Progress(frame as f64 / total_frames as f64));
     }
