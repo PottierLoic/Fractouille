@@ -18,7 +18,6 @@ pub fn default_palettes() -> Vec<Palette> {
       interpolation: InterpolationMode::Cosine,
       cycle_speed: 20.0,
     },
-
     // 2. Fire
     Palette {
       stops: vec![
@@ -35,7 +34,6 @@ pub fn default_palettes() -> Vec<Palette> {
       interpolation: InterpolationMode::Linear,
       cycle_speed: 20.0,
     },
-
     // 3. Ocean
     Palette {
       stops: vec![
@@ -52,7 +50,6 @@ pub fn default_palettes() -> Vec<Palette> {
       interpolation: InterpolationMode::Linear,
       cycle_speed: 20.0,
     },
-
     // 4. Ice
     Palette {
       stops: vec![
@@ -69,7 +66,6 @@ pub fn default_palettes() -> Vec<Palette> {
       interpolation: InterpolationMode::Linear,
       cycle_speed: 20.0,
     },
-
     // 5. Neon
     Palette {
       stops: vec![
@@ -86,7 +82,6 @@ pub fn default_palettes() -> Vec<Palette> {
       interpolation: InterpolationMode::Linear,
       cycle_speed: 20.0,
     },
-
     // 6. Earth
     Palette {
       stops: vec![
@@ -105,7 +100,6 @@ pub fn default_palettes() -> Vec<Palette> {
       interpolation: InterpolationMode::Linear,
       cycle_speed: 20.0,
     },
-
     // 7. Rainbow
     Palette {
       stops: vec![
