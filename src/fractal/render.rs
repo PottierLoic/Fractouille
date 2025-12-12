@@ -31,7 +31,13 @@ impl Fractal {
             };
 
             let (iter, final_z) = match self.set {
-              Set::Mandelbrot => iterate_mandelbrot(z0, c0, self.max_iterations, self.power),
+              Set::Mandelbrot => {
+                if self.power == 2.0 && in_bulb(c0) {
+                  (255, z0)
+                } else {
+                  iterate_mandelbrot(z0, c0, self.max_iterations, self.power)
+                }
+              }
               Set::Julia => iterate_julia(z0, c0, self.max_iterations, self.power),
               Set::BurningShip => iterate_burningship(z0, c0, self.max_iterations),
               Set::Phoenix => {
@@ -63,4 +69,23 @@ impl Fractal {
     let (r, g, b) = palette.eval(iter / palette.cycle_speed);
     Rgb([r, g, b])
   }
+}
+
+// Check if the point is in the main cardioid or period 2 bulb
+// work only for power=2 mandelbrot set
+#[inline(always)]
+fn in_bulb(c: Complex) -> bool {
+  let x = c.re - 0.25;
+  let y = c.im;
+  let q = x * x + y * y;
+  if q * (q + x) <= 0.25 * y * y {
+    return true;
+  }
+
+  let dx = c.re + 1.0;
+  if dx * dx + c.im * c.im <= 0.0625 {
+    return true;
+  }
+
+  false
 }
