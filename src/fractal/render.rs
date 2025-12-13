@@ -11,7 +11,7 @@ use image::Rgb;
 use rayon::scope;
 
 const TOP_TILE: u32 = 512;
-const MIN_TILE: u32 = 8;
+const MIN_TILE: u32 = 32;
 
 #[derive(Clone, Copy)]
 struct Tile {
