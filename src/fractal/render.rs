@@ -1,3 +1,6 @@
+use std::ptr;
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::AtomicPtr;
 use crate::complex::Complex;
 use crate::fractal::constants::{LOG2, SMOOTH_OFFSET};
 use crate::fractal::iter::{
@@ -5,10 +8,9 @@ use crate::fractal::iter::{
 };
 use crate::fractal::{Fractal, Set};
 use image::Rgb;
-use rayon::iter::IntoParallelIterator;
-use rayon::iter::ParallelIterator;
+use rayon::scope;
 
-const TOP_TILE: u32 = 64;
+const TOP_TILE: u32 = 512;
 const MIN_TILE: u32 = 8;
 
 #[derive(Clone, Copy)]
@@ -29,10 +31,12 @@ impl Fractal {
 
     let size = width as usize * height as usize;
 
-    let mut tiles = Vec::new();
+    let mut out = vec![Rgb([0, 0, 0]); size];
+
+    let mut initial_tiles = Vec::new();
     for y in (0..height).step_by(TOP_TILE as usize) {
       for x in (0..width).step_by(TOP_TILE as usize) {
-        tiles.push(Tile {
+        initial_tiles.push(Tile {
           x0: x,
           y0: y,
           w: TOP_TILE.min(width - x),
@@ -41,24 +45,32 @@ impl Fractal {
       }
     }
 
-    let results: Vec<(Tile, Vec<Rgb<u8>>)> = tiles
-        .into_par_iter()
-        .map(|tile| {
-          let tile_data = process_tile(tile, width, height, left, top, vw, vh, smooth, self);
-          (tile, tile_data)
-        })
-        .collect();
+    let work_pool = Arc::new(Mutex::new(initial_tiles));
+    let out_atomic_ptr = Arc::new(AtomicPtr::new(out.as_mut_ptr()));
 
-    let mut out = vec![Rgb([0, 0, 0]); size];
+    scope(|s| {
+      for _ in 0..rayon::current_num_threads() {
+        let pool_clone = work_pool.clone();
+        let out_atomic_ptr_clone = out_atomic_ptr.clone();
 
-    for (tile, data) in results {
-      let mut data_iter = data.into_iter();
-      for y in tile.y0..(tile.y0 + tile.h) {
-        for x in tile.x0..(tile.x0 + tile.w) {
-          out[idx(width, x, y)] = data_iter.next().unwrap();
-        }
+        s.spawn(move |_| unsafe {
+          let out_ptr = out_atomic_ptr_clone.load(std::sync::atomic::Ordering::Relaxed);
+
+          work_loop_unsafe(
+            pool_clone,
+            out_ptr,
+            width,
+            height,
+            left,
+            top,
+            vw,
+            vh,
+            smooth,
+            self,
+          );
+        });
       }
-    }
+    });
 
     out.chunks(width as usize).map(|row| row.to_vec()).collect()
   }
@@ -71,6 +83,107 @@ impl Fractal {
     let palette = &self.palette[self.current_palette];
     let (r, g, b) = palette.eval(iter / palette.cycle_speed);
     Rgb([r, g, b])
+  }
+}
+
+unsafe fn work_loop_unsafe(
+  work_pool: Arc<Mutex<Vec<Tile>>>,
+  out_ptr: *mut Rgb<u8>,
+  width: u32,
+  height: u32,
+  left: f64,
+  top: f64,
+  vw: f64,
+  vh: f64,
+  smooth: bool,
+  fractal: &Fractal,
+) {
+  loop {
+    let current_tile = {
+      let mut pool = match work_pool.lock() {
+        Ok(p) => p,
+        Err(_) => break,
+      };
+      match pool.pop() {
+        Some(tile) => tile,
+        None => break,
+      }
+    };
+
+    let mut stack = vec![current_tile];
+    while let Some(current_sub_tile) = stack.pop() {
+      let mut check_and_compute = |x: u32, y: u32| -> Rgb<u8> {
+        let val = compute(x, y, width, height, left, top, vw, vh, smooth, fractal);
+
+        let index = idx(width, x, y);
+        ptr::write(out_ptr.add(index), val);
+        val
+      };
+
+      let x1 = current_sub_tile.x0 + current_sub_tile.w - 1;
+      let y1 = current_sub_tile.y0 + current_sub_tile.h - 1;
+
+      if current_sub_tile.w <= MIN_TILE || current_sub_tile.h <= MIN_TILE {
+        for x in current_sub_tile.x0..=x1 {
+          for y in current_sub_tile.y0..=y1 {
+            check_and_compute(x, y);
+          }
+        }
+        continue;
+      }
+
+      let mut is_interior = true;
+      let mut edge_results = Vec::new();
+
+      for x in current_sub_tile.x0..=x1 {
+        let val_t = check_and_compute(x, current_sub_tile.y0);
+        edge_results.push(val_t);
+        if val_t != Rgb([0, 0, 0]) { is_interior = false; }
+        if y1 != current_sub_tile.y0 {
+          let val_b = check_and_compute(x, y1);
+          edge_results.push(val_b);
+          if val_b != Rgb([0, 0, 0]) { is_interior = false; }
+        }
+      }
+
+      for y in (current_sub_tile.y0 + 1)..y1 {
+        let val_l = check_and_compute(current_sub_tile.x0, y);
+        edge_results.push(val_l);
+        if val_l != Rgb([0, 0, 0]) { is_interior = false; }
+        if x1 != current_sub_tile.x0 {
+          let val_r = check_and_compute(x1, y);
+          edge_results.push(val_r);
+          if val_r != Rgb([0, 0, 0]) { is_interior = false; }
+        }
+      }
+
+      if is_interior {
+        for x in (current_sub_tile.x0 + 1)..(current_sub_tile.x0 + current_sub_tile.w - 1) {
+          for y in (current_sub_tile.y0 + 1)..(current_sub_tile.y0 + current_sub_tile.h - 1) {
+            let index = idx(width, x, y);
+            ptr::write(out_ptr.add(index), Rgb([255, 255, 255]));
+          }
+        }
+      } else {
+        let hw = current_sub_tile.w / 2;
+        let hh = current_sub_tile.h / 2;
+        let w0 = hw;
+        let h0 = hh;
+        let w1 = current_sub_tile.w - hw;
+        let h1 = current_sub_tile.h - hh;
+
+        let children = vec![
+          Tile { x0: current_sub_tile.x0, y0: current_sub_tile.y0, w: w0, h: h0, },
+          Tile { x0: current_sub_tile.x0 + w0, y0: current_sub_tile.y0, w: w1, h: h0, },
+          Tile { x0: current_sub_tile.x0, y0: current_sub_tile.y0 + h0, w: w0, h: h1, },
+          Tile { x0: current_sub_tile.x0 + w0, y0: current_sub_tile.y0 + h0, w: w1, h: h1, },
+        ];
+
+        let mut pool = work_pool.lock().unwrap();
+        pool.extend(children);
+      }
+
+    }
   }
 }
 
@@ -142,109 +255,4 @@ fn compute(
 #[inline(always)]
 fn idx(width: u32, x: u32, y: u32) -> usize {
   (y as usize) * (width as usize) + (x as usize)
-}
-
-#[inline(always)]
-fn local_idx(x: u32, y: u32, tile_w: u32, tile_x0: u32, tile_y0: u32) -> usize {
-  ((y - tile_y0) * tile_w + (x - tile_x0)) as usize
-}
-
-fn process_tile(
-  tile: Tile,
-  width: u32,
-  height: u32,
-  left: f64,
-  top: f64,
-  vw: f64,
-  vh: f64,
-  smooth: bool,
-  fractal: &Fractal,
-) -> Vec<Rgb<u8>> {
-  let mut tile_pixels = vec![Rgb([0, 0, 0]); (tile.w * tile.h) as usize];
-  let mut calculated_local = vec![false; (tile.w * tile.h) as usize];
-
-  let mut stack = vec![tile];
-  let lid = |x: u32, y: u32| -> usize {
-    local_idx(x, y, tile.w, tile.x0, tile.y0)
-  };
-
-  while let Some(current_tile) = stack.pop() {
-    let mut check_and_compute = |x: u32, y: u32| -> Rgb<u8> {
-      let index = lid(x, y);
-
-      if calculated_local[index] {
-        return tile_pixels[index];
-      }
-
-      let val = compute(x, y, width, height, left, top, vw, vh, smooth, fractal);
-      tile_pixels[index] = val;
-      calculated_local[index] = true;
-      val
-    };
-
-    let x1 = current_tile.x0 + current_tile.w - 1;
-    let y1 = current_tile.y0 + current_tile.h - 1;
-
-    if current_tile.w <= MIN_TILE || current_tile.h <= MIN_TILE {
-      for x in current_tile.x0..=x1 {
-        for y in current_tile.y0..=y1 {
-          check_and_compute(x, y);
-        }
-      }
-      continue;
-    }
-
-    let mut is_interior = true;
-    for x in current_tile.x0..=x1 {
-      let val = check_and_compute(x, current_tile.y0);
-      if val != Rgb([0, 0, 0]) {
-        is_interior = false;
-      }
-      if y1 != current_tile.y0 {
-        let val = check_and_compute(x, y1);
-        if val != Rgb([0, 0, 0]) {
-          is_interior = false;
-        }
-      }
-    }
-
-    for y in (current_tile.y0 + 1)..y1 {
-      let val = check_and_compute(current_tile.x0, y);
-      if val != Rgb([0, 0, 0]) {
-        is_interior = false;
-      }
-      if x1 != current_tile.x0 {
-        let val = check_and_compute(x1, y);
-        if val != Rgb([0, 0, 0]) {
-          is_interior = false;
-        }
-      }
-    }
-
-
-    if is_interior {
-      for x in (current_tile.x0 + 1)..(current_tile.x0 + current_tile.w - 1) {
-        for y in (current_tile.y0 + 1)..(current_tile.y0 + current_tile.h - 1) {
-          let index = lid(x, y);
-          tile_pixels[index] = Rgb([255, 255, 255]);
-          calculated_local[index] = true;
-        }
-      }
-    } else {
-      let hw = current_tile.w / 2;
-      let hh = current_tile.h / 2;
-      let w0 = hw;
-      let w1 = current_tile.w - hw;
-      let h0 = hh;
-      let h1 = current_tile.h - hh;
-
-      stack.push(Tile { x0: current_tile.x0, y0: current_tile.y0, w: w0, h: h0, });
-      stack.push(Tile { x0: current_tile.x0 + w0, y0: current_tile.y0, w: w1, h: h0, });
-      stack.push(Tile { x0: current_tile.x0, y0: current_tile.y0 + h0, w: w0, h: h1, });
-      stack.push(Tile { x0: current_tile.x0 + w0, y0: current_tile.y0 + h0, w: w1, h: h1, });
-    }
-  }
-
-
-  tile_pixels
 }
