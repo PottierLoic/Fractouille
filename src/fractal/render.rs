@@ -116,7 +116,9 @@ fn compute(
         iterate_mandelbrot(z0, c0, fractal.max_iterations, fractal.power)
       }
     }
-    Set::Julia => iterate_julia(z0, c0, fractal.max_iterations, fractal.power),
+    Set::Julia => {
+      iterate_julia(c0, fractal.julia_c, fractal.max_iterations, fractal.power)
+    },
     Set::BurningShip => iterate_burningship(z0, c0, fractal.max_iterations),
     Set::Phoenix => iterate_phoenix(
       z0,
@@ -211,7 +213,7 @@ fn process_tile(
     for x in (tile.x0 + 1)..(tile.x0 + tile.w - 1) {
       for y in (tile.y0 + 1)..(tile.y0 + tile.h - 1) {
         let index = lid(x, y);
-        tile_pixels[index] = Rgb([255, 255, 255]);
+        tile_pixels[index] = Rgb([0, 0, 0]);
         calculated_local[index] = true;
       }
     }
