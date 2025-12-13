@@ -225,7 +225,7 @@ fn compute(
   let (iter, final_z) = match fractal.set {
     Set::Mandelbrot => {
       if fractal.power == 2.0 && in_bulb(c0) {
-        (255, z0)
+        (fractal.max_iterations, z0)
       } else {
         iterate_mandelbrot(z0, c0, fractal.max_iterations, fractal.power)
       }
