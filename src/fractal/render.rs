@@ -1,6 +1,3 @@
-use std::ptr;
-use std::sync::Arc;
-use std::sync::atomic::AtomicPtr;
 use crate::complex::Complex;
 use crate::fractal::constants::{LOG2, SMOOTH_OFFSET};
 use crate::fractal::iter::{
@@ -9,6 +6,9 @@ use crate::fractal::iter::{
 use crate::fractal::{Fractal, Set};
 use image::Rgb;
 use rayon::scope;
+use std::ptr;
+use std::sync::Arc;
+use std::sync::atomic::AtomicPtr;
 
 use crossbeam::queue::SegQueue;
 
@@ -57,16 +57,7 @@ impl Fractal {
           let out_ptr = out_atomic_ptr_clone.load(std::sync::atomic::Ordering::Relaxed);
 
           work_loop_unsafe(
-            pool_clone,
-            out_ptr,
-            width,
-            height,
-            left,
-            top,
-            vw,
-            vh,
-            smooth,
-            self,
+            pool_clone, out_ptr, width, height, left, top, vw, vh, smooth, self,
           );
         });
       }
@@ -111,7 +102,9 @@ unsafe fn work_loop_unsafe(
       let val = compute(x, y, width, height, left, top, vw, vh, smooth, fractal);
 
       let index = idx(width, x, y);
-      unsafe { ptr::write(out_ptr.add(index), val); };
+      unsafe {
+        ptr::write(out_ptr.add(index), val);
+      };
       val
     };
 
@@ -132,27 +125,36 @@ unsafe fn work_loop_unsafe(
 
     for x in current_tile.x0..=x1 {
       let val_t = check_and_compute(x, current_tile.y0);
-      if val_t != corner_value { is_interior = false; }
+      if val_t != corner_value {
+        is_interior = false;
+      }
       if y1 != current_tile.y0 {
         let val_b = check_and_compute(x, y1);
-        if val_b != corner_value { is_interior = false; }
+        if val_b != corner_value {
+          is_interior = false;
+        }
       }
     }
 
     for y in (current_tile.y0 + 1)..y1 {
       let val_l = check_and_compute(current_tile.x0, y);
-      if val_l != corner_value { is_interior = false; }
+      if val_l != corner_value {
+        is_interior = false;
+      }
       if x1 != current_tile.x0 {
         let val_r = check_and_compute(x1, y);
-        if val_r != corner_value { is_interior = false; }
+        if val_r != corner_value {
+          is_interior = false;
+        }
       }
     }
 
     if is_interior {
       for x in (current_tile.x0 + 1)..(current_tile.x0 + current_tile.w - 1) {
         for y in (current_tile.y0 + 1)..(current_tile.y0 + current_tile.h - 1) {
-          let index = idx(width, x, y);
-          unsafe { ptr::write(out_ptr.add(index), Rgb([255, 255, 255])); };
+          unsafe {
+            ptr::write(out_ptr.add(idx(width, x, y)), Rgb([255, 255, 255]));
+          };
         }
       }
     } else {
@@ -164,10 +166,30 @@ unsafe fn work_loop_unsafe(
       let h1 = current_tile.h - hh;
 
       let children = vec![
-        Tile { x0: current_tile.x0, y0: current_tile.y0, w: w0, h: h0, },
-        Tile { x0: current_tile.x0 + w0, y0: current_tile.y0, w: w1, h: h0, },
-        Tile { x0: current_tile.x0, y0: current_tile.y0 + h0, w: w0, h: h1, },
-        Tile { x0: current_tile.x0 + w0, y0: current_tile.y0 + h0, w: w1, h: h1, },
+        Tile {
+          x0: current_tile.x0,
+          y0: current_tile.y0,
+          w: w0,
+          h: h0,
+        },
+        Tile {
+          x0: current_tile.x0 + w0,
+          y0: current_tile.y0,
+          w: w1,
+          h: h0,
+        },
+        Tile {
+          x0: current_tile.x0,
+          y0: current_tile.y0 + h0,
+          w: w0,
+          h: h1,
+        },
+        Tile {
+          x0: current_tile.x0 + w0,
+          y0: current_tile.y0 + h0,
+          w: w1,
+          h: h1,
+        },
       ];
 
       for child in children {
