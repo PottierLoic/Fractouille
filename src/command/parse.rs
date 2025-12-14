@@ -21,6 +21,7 @@ pub fn parse_command(input: &str) -> Command {
     "zoom" => parse_zoom(&parts),
     "set" => parse_set(&parts),
     "record" => parse_record(&parts),
+    "record_julia" => parse_record_julia(&parts),
     "cycle_speed" => parse_cycle_speed(&parts),
     "palette" => parse_palette(&parts),
 
@@ -235,6 +236,47 @@ pub fn parse_record(parts: &[&str]) -> Command {
   };
 
   Command::Record(width, height, start, end, speed)
+}
+
+pub fn parse_record_julia(parts: &[&str]) -> Command {
+  if parts.len() != 7 {
+    return Command::Unknown(format!(
+      "Usage: record_julia <width> <height> <re> <im> <speed>. Got {} arguments",
+      parts.len() - 1
+    ));
+  }
+
+  let width = match parts[1].parse::<u32>() {
+    Ok(v) => v,
+    Err(_) => return Command::Unknown(format!("Invalid width: {}", parts[1])),
+  };
+
+  let height = match parts[2].parse::<u32>() {
+    Ok(v) => v,
+    Err(_) => return Command::Unknown(format!("Invalid height: {}", parts[2])),
+  };
+
+  let duration = match parts[3].parse::<f64>() {
+    Ok(v) => v,
+    Err(_) => return Command::Unknown(format!("Invalid duration: {}", parts[2])),
+  };
+
+  let re = match parts[4].parse::<f64>() {
+    Ok(v) => v,
+    Err(_) => return Command::Unknown(format!("Invalid re: {}", parts[3])),
+  };
+
+  let im = match parts[5].parse::<f64>() {
+    Ok(v) => v,
+    Err(_) => return Command::Unknown(format!("Invalid im: {}", parts[4])),
+  };
+
+  let speed = match parts[6].parse::<f64>() {
+    Ok(v) => v,
+    Err(_) => return Command::Unknown(format!("Invalid speed: {}", parts[5])),
+  };
+
+  Command::RecordJulia(width, height, duration, re, im, speed)
 }
 
 pub fn parse_cycle_speed(parts: &[&str]) -> Command {
