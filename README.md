@@ -12,8 +12,14 @@ Fractouille is a simple fractal explorer running in your terminal.
 
 - Multiple fractal sets (Mandelbrot, Julia, Burning Ship)
 - High-quality screenshot capture with smooth coloring
+- Zoom videos recording
 - Interactive navigation
 - Command mode for advanced usage
+
+## Requirements
+
+- Rust
+- FFmpeg (for video recording)
 
 ## Usage
 
@@ -49,11 +55,6 @@ A list of all available commands can be found by in the `COMMANDS.md` file.
 Screenshots and records are automatically saved to your system's Pictures folder inside of `fractouille`.
 Recording need `ffmpeg` to be installed on your system, more information can be found in the `RECORD.md` file.
 
-Here are some screenshots:
-![](museum/mandelbrot.png)
-![](museum/julia_1752786293_x0.025686664181739313_y0_z3.797498335832415_p6.png)
-![](museum/base_ship.png)
-
 ## Roadmap
 
 - [x] Basic fractal sets implementation
@@ -65,9 +66,18 @@ Here are some screenshots:
     - [x] Auto-save
 - [x] Variable power parameter
 
-- [ ] Deep zoom capability
-- [ ] Customizable color palette
+- [ ] Border tracing method
+- [ ] Arbitray precision
+- [x] Customizable color palette
 
 - [x] Phoenix Set implementation
 - [ ] Newton fractals
 - [ ] Lyapunov fractals
+
+## Museum
+
+Some really cool pictures I took can be seen in the `museum` folder.
+
+![](museum/mandelbrot_1765719606_x-1.0112261337344692_y-0.3141187591728309_z84280.97165257359_p2.png)
+![](museum/mandelbrot_1765719666_x-1.2112520476343478_y-0.318445881949524_z305844346.7923433_p2.png)
+![](museum/mandelbrot_1765719547_x0.4147993498579829_y-0.14790285832920558_z1787453723235.0679_p2.png)
