@@ -7,10 +7,12 @@ pub enum InterpolationMode {
   Cosine,
   Hsv,
   HsvCyclic,
+  None,
 }
 
 pub fn eval_linear(p: &Palette, t: f64) -> (u8, u8, u8) {
-  let (i1, i2, local_t) = p.resolve_segment(t);
+  let scaled_t = t / p.cycle_speed;
+  let (i1, i2, local_t) = p.resolve_segment(scaled_t);
 
   let (r1, g1, b1) = p.stops[i1];
   let (r2, g2, b2) = p.stops[i2];
@@ -23,7 +25,8 @@ pub fn eval_linear(p: &Palette, t: f64) -> (u8, u8, u8) {
 }
 
 pub fn eval_cosine(p: &Palette, t: f64) -> (u8, u8, u8) {
-  let (i1, i2, local_t) = p.resolve_segment(t);
+  let scaled_t = t / p.cycle_speed;
+  let (i1, i2, local_t) = p.resolve_segment(scaled_t);
 
   let (r1, g1, b1) = p.stops[i1];
   let (r2, g2, b2) = p.stops[i2];
@@ -38,7 +41,8 @@ pub fn eval_cosine(p: &Palette, t: f64) -> (u8, u8, u8) {
 }
 
 pub fn eval_hsv(p: &Palette, t: f64) -> (u8, u8, u8) {
-  let (i1, i2, local_t) = p.resolve_segment(t);
+  let scaled_t = t / p.cycle_speed;
+  let (i1, i2, local_t) = p.resolve_segment(scaled_t);
 
   let (r1, g1, b1) = p.stops[i1];
   let (r2, g2, b2) = p.stops[i2];
@@ -54,7 +58,8 @@ pub fn eval_hsv(p: &Palette, t: f64) -> (u8, u8, u8) {
 }
 
 pub fn eval_hsv_cyclic(p: &Palette, t: f64) -> (u8, u8, u8) {
-  let (i1, i2, local_t) = p.resolve_segment(t);
+  let scaled_t = t / p.cycle_speed;
+  let (i1, i2, local_t) = p.resolve_segment(scaled_t);
 
   let (r1, g1, b1) = p.stops[i1];
   let (r2, g2, b2) = p.stops[i2];
@@ -74,4 +79,8 @@ pub fn eval_hsv_cyclic(p: &Palette, t: f64) -> (u8, u8, u8) {
   let v = v1 + local_t * (v2 - v1);
 
   hsv_to_rgb(h, s, v)
+}
+
+pub fn eval_none(p: &Palette, t: f64) -> (u8, u8, u8) {
+  p.stops[t as usize % p.stops.len()]
 }
