@@ -2,6 +2,7 @@ use crate::fractal::{Fractal, Set};
 use image::Rgb;
 use std::io::{self, Write};
 use std::process::exit;
+use crate::palette::InterpolationMode;
 
 const HEIGHT: u32 = 600;
 const WIDTH: u32 = 600;
@@ -18,6 +19,7 @@ fn to_sixel(v: u8) -> u32 {
 pub fn start_sixel_rendering() {
   let mut fractal = Fractal::default();
   let mut set_selected = false;
+  fractal.palette[0].interpolation = InterpolationMode::None;
 
   while !set_selected {
     clear_terminal();
@@ -58,11 +60,10 @@ pub fn start_sixel_rendering() {
     let img = fractal.render_frame(WIDTH, HEIGHT, false);
 
     let mut out = String::new();
-    let palette = &fractal.palette[fractal.current_palette];
 
     out.push_str("\x1bPq");
     out.push_str(&format!("\"1;1;{};{}", WIDTH, HEIGHT));
-    for (i, (r, g, b)) in palette.stops.iter().enumerate() {
+    for (i, (r, g, b)) in fractal.palette[0].stops.iter().enumerate() {
       out.push_str(&format!(
         "#{};2;{};{};{}",
         i,
@@ -73,8 +74,8 @@ pub fn start_sixel_rendering() {
     }
 
     for y in (0..HEIGHT).step_by(6) {
-      for c in 0..palette.stops.len() {
-        let color = palette.stops[c];
+      for c in 0..fractal.palette[0].stops.len() {
+        let color = fractal.palette[0].stops[c];
         out.push_str(&format!("#{}", c));
 
         for x in 0..WIDTH {
