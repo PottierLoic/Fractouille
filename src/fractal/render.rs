@@ -153,7 +153,7 @@ unsafe fn work_loop_unsafe(
       for x in (current_tile.x0 + 1)..(current_tile.x0 + current_tile.w - 1) {
         for y in (current_tile.y0 + 1)..(current_tile.y0 + current_tile.h - 1) {
           unsafe {
-            ptr::write(out_ptr.add(idx(width, x, y)), Rgb([255, 255, 255]));
+            ptr::write(out_ptr.add(idx(width, x, y)), corner_value);
           };
         }
       }
@@ -242,7 +242,7 @@ fn compute(
         iterate_mandelbrot(z0, c0, fractal.max_iterations, fractal.power)
       }
     }
-    Set::Julia => iterate_julia(z0, c0, fractal.max_iterations, fractal.power),
+    Set::Julia => iterate_julia(c0, fractal.julia_c, fractal.max_iterations, fractal.power),
     Set::BurningShip => iterate_burningship(z0, c0, fractal.max_iterations),
     Set::Phoenix => iterate_phoenix(
       z0,
