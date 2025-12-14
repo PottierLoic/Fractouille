@@ -1,5 +1,5 @@
 use std::ptr;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::sync::atomic::AtomicPtr;
 use crate::complex::Complex;
 use crate::fractal::constants::{LOG2, SMOOTH_OFFSET};
@@ -10,8 +10,10 @@ use crate::fractal::{Fractal, Set};
 use image::Rgb;
 use rayon::scope;
 
+use crossbeam::queue::SegQueue;
+
 const TOP_TILE: u32 = 512;
-const MIN_TILE: u32 = 8;
+const MIN_TILE: u32 = 16;
 
 #[derive(Clone, Copy)]
 struct Tile {
@@ -30,13 +32,12 @@ impl Fractal {
     let top = self.z.im - vh / 2.0;
 
     let size = width as usize * height as usize;
-
     let mut out = vec![Rgb([0, 0, 0]); size];
 
-    let mut initial_tiles = Vec::new();
+    let work_pool = Arc::new(SegQueue::new());
     for y in (0..height).step_by(TOP_TILE as usize) {
       for x in (0..width).step_by(TOP_TILE as usize) {
-        initial_tiles.push(Tile {
+        work_pool.push(Tile {
           x0: x,
           y0: y,
           w: TOP_TILE.min(width - x),
@@ -45,7 +46,6 @@ impl Fractal {
       }
     }
 
-    let work_pool = Arc::new(Mutex::new(initial_tiles));
     let out_atomic_ptr = Arc::new(AtomicPtr::new(out.as_mut_ptr()));
 
     scope(|s| {
@@ -87,7 +87,7 @@ impl Fractal {
 }
 
 unsafe fn work_loop_unsafe(
-  work_pool: Arc<Mutex<Vec<Tile>>>,
+  work_pool: Arc<SegQueue<Tile>>,
   out_ptr: *mut Rgb<u8>,
   width: u32,
   height: u32,
@@ -99,91 +99,80 @@ unsafe fn work_loop_unsafe(
   fractal: &Fractal,
 ) {
   loop {
-    let current_tile = {
-      let mut pool = match work_pool.lock() {
-        Ok(p) => p,
-        Err(_) => break,
-      };
-      match pool.pop() {
-        Some(tile) => tile,
-        None => break,
-      }
+    let tile_result = work_pool.pop();
+
+    let current_tile = if let Some(tile) = tile_result {
+      tile
+    } else {
+      break;
     };
 
-    let mut stack = vec![current_tile];
-    while let Some(current_sub_tile) = stack.pop() {
-      let mut check_and_compute = |x: u32, y: u32| -> Rgb<u8> {
-        let val = compute(x, y, width, height, left, top, vw, vh, smooth, fractal);
+    let check_and_compute = |x: u32, y: u32| -> Rgb<u8> {
+      let val = compute(x, y, width, height, left, top, vw, vh, smooth, fractal);
 
-        let index = idx(width, x, y);
-        ptr::write(out_ptr.add(index), val);
-        val
-      };
+      let index = idx(width, x, y);
+      unsafe { ptr::write(out_ptr.add(index), val); };
+      val
+    };
 
-      let x1 = current_sub_tile.x0 + current_sub_tile.w - 1;
-      let y1 = current_sub_tile.y0 + current_sub_tile.h - 1;
+    let x1 = current_tile.x0 + current_tile.w - 1;
+    let y1 = current_tile.y0 + current_tile.h - 1;
 
-      if current_sub_tile.w <= MIN_TILE || current_sub_tile.h <= MIN_TILE {
-        for x in current_sub_tile.x0..=x1 {
-          for y in current_sub_tile.y0..=y1 {
-            check_and_compute(x, y);
-          }
-        }
-        continue;
-      }
-
-      let mut is_interior = true;
-      let corner_value = check_and_compute(current_sub_tile.x0, current_sub_tile.y0);
-      let mut edge_results = Vec::new();
-
-      for x in current_sub_tile.x0..=x1 {
-        let val_t = check_and_compute(x, current_sub_tile.y0);
-        edge_results.push(val_t);
-        if val_t != corner_value { is_interior = false; }
-        if y1 != current_sub_tile.y0 {
-          let val_b = check_and_compute(x, y1);
-          edge_results.push(val_b);
-          if val_b != corner_value { is_interior = false; }
+    if current_tile.w <= MIN_TILE || current_tile.h <= MIN_TILE {
+      for x in current_tile.x0..=x1 {
+        for y in current_tile.y0..=y1 {
+          check_and_compute(x, y);
         }
       }
+      continue;
+    }
 
-      for y in (current_sub_tile.y0 + 1)..y1 {
-        let val_l = check_and_compute(current_sub_tile.x0, y);
-        edge_results.push(val_l);
-        if val_l != corner_value { is_interior = false; }
-        if x1 != current_sub_tile.x0 {
-          let val_r = check_and_compute(x1, y);
-          edge_results.push(val_r);
-          if val_r != corner_value { is_interior = false; }
+    let mut is_interior = true;
+    let corner_value = check_and_compute(current_tile.x0, current_tile.y0);
+
+    for x in current_tile.x0..=x1 {
+      let val_t = check_and_compute(x, current_tile.y0);
+      if val_t != corner_value { is_interior = false; }
+      if y1 != current_tile.y0 {
+        let val_b = check_and_compute(x, y1);
+        if val_b != corner_value { is_interior = false; }
+      }
+    }
+
+    for y in (current_tile.y0 + 1)..y1 {
+      let val_l = check_and_compute(current_tile.x0, y);
+      if val_l != corner_value { is_interior = false; }
+      if x1 != current_tile.x0 {
+        let val_r = check_and_compute(x1, y);
+        if val_r != corner_value { is_interior = false; }
+      }
+    }
+
+    if is_interior {
+      for x in (current_tile.x0 + 1)..(current_tile.x0 + current_tile.w - 1) {
+        for y in (current_tile.y0 + 1)..(current_tile.y0 + current_tile.h - 1) {
+          let index = idx(width, x, y);
+          unsafe { ptr::write(out_ptr.add(index), Rgb([255, 255, 255])); };
         }
       }
+    } else {
+      let hw = current_tile.w / 2;
+      let hh = current_tile.h / 2;
+      let w0 = hw;
+      let h0 = hh;
+      let w1 = current_tile.w - hw;
+      let h1 = current_tile.h - hh;
 
-      if is_interior {
-        for x in (current_sub_tile.x0 + 1)..(current_sub_tile.x0 + current_sub_tile.w - 1) {
-          for y in (current_sub_tile.y0 + 1)..(current_sub_tile.y0 + current_sub_tile.h - 1) {
-            let index = idx(width, x, y);
-            ptr::write(out_ptr.add(index), Rgb([255, 255, 255]));
-          }
-        }
-      } else {
-        let hw = current_sub_tile.w / 2;
-        let hh = current_sub_tile.h / 2;
-        let w0 = hw;
-        let h0 = hh;
-        let w1 = current_sub_tile.w - hw;
-        let h1 = current_sub_tile.h - hh;
+      let children = vec![
+        Tile { x0: current_tile.x0, y0: current_tile.y0, w: w0, h: h0, },
+        Tile { x0: current_tile.x0 + w0, y0: current_tile.y0, w: w1, h: h0, },
+        Tile { x0: current_tile.x0, y0: current_tile.y0 + h0, w: w0, h: h1, },
+        Tile { x0: current_tile.x0 + w0, y0: current_tile.y0 + h0, w: w1, h: h1, },
+      ];
 
-        let children = vec![
-          Tile { x0: current_sub_tile.x0, y0: current_sub_tile.y0, w: w0, h: h0, },
-          Tile { x0: current_sub_tile.x0 + w0, y0: current_sub_tile.y0, w: w1, h: h0, },
-          Tile { x0: current_sub_tile.x0, y0: current_sub_tile.y0 + h0, w: w0, h: h1, },
-          Tile { x0: current_sub_tile.x0 + w0, y0: current_sub_tile.y0 + h0, w: w1, h: h1, },
-        ];
-
-        let mut pool = work_pool.lock().unwrap();
-        pool.extend(children);
+      for child in children {
+        work_pool.push(child);
       }
-
     }
   }
 }
