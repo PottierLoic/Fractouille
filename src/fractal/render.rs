@@ -5,8 +5,23 @@ use crate::fractal::iter::{
 };
 use crate::fractal::{Fractal, Set};
 use image::Rgb;
-use rayon::iter::IntoParallelIterator;
-use rayon::iter::ParallelIterator;
+use rayon::scope;
+use std::ptr;
+use std::sync::Arc;
+use std::sync::atomic::AtomicPtr;
+
+use crossbeam::queue::SegQueue;
+
+const TOP_TILE: u32 = 512;
+const MIN_TILE: u32 = 16;
+
+#[derive(Clone, Copy)]
+struct Tile {
+  x0: u32,
+  y0: u32,
+  w: u32,
+  h: u32,
+}
 
 impl Fractal {
   pub fn render_frame(&self, width: u32, height: u32, smooth: bool) -> Vec<Vec<Rgb<u8>>> {
@@ -16,51 +31,42 @@ impl Fractal {
     let left = self.z.re - vw / 2.0;
     let top = self.z.im - vh / 2.0;
 
-    (0..height)
-      .into_par_iter()
-      .map(|y| {
-        (0..width)
-          .map(|x| {
-            let cx = left + x as f64 * vw / width as f64;
-            let cy = top + y as f64 * vh / height as f64;
+    let size = width as usize * height as usize;
+    let mut out = vec![Rgb([0, 0, 0]); size];
 
-            let (z0, c0) = match self.set {
-              Set::Mandelbrot | Set::BurningShip => (Complex::new(0.0, 0.0), Complex::new(cx, cy)),
-              Set::Julia => (Complex::new(cx, cy), self.julia_c),
-              Set::Phoenix => (Complex::new(0.0, 0.0), Complex::new(cy, cx)),
-            };
+    let work_pool = Arc::new(SegQueue::new());
+    for y in (0..height).step_by(TOP_TILE as usize) {
+      for x in (0..width).step_by(TOP_TILE as usize) {
+        work_pool.push(Tile {
+          x0: x,
+          y0: y,
+          w: TOP_TILE.min(width - x),
+          h: TOP_TILE.min(height - y),
+        });
+      }
+    }
 
-            let (iter, final_z) = match self.set {
-              Set::Mandelbrot => {
-                if self.power == 2.0 && in_bulb(c0) {
-                  (255, z0)
-                } else {
-                  iterate_mandelbrot(z0, c0, self.max_iterations, self.power)
-                }
-              }
-              Set::Julia => iterate_julia(z0, c0, self.max_iterations, self.power),
-              Set::BurningShip => iterate_burningship(z0, c0, self.max_iterations),
-              Set::Phoenix => {
-                iterate_phoenix(z0, c0, self.phoenix_p, self.max_iterations, self.power)
-              }
-            };
+    let out_atomic_ptr = Arc::new(AtomicPtr::new(out.as_mut_ptr()));
 
-            let value = if smooth && iter < self.max_iterations {
-              let log_zn = final_z.abs_sq().sqrt().ln().ln();
-              iter as f64 + SMOOTH_OFFSET - log_zn / LOG2
-            } else {
-              iter as f64
-            };
+    scope(|s| {
+      for _ in 0..rayon::current_num_threads() {
+        let pool_clone = work_pool.clone();
+        let out_atomic_ptr_clone = out_atomic_ptr.clone();
 
-            // Return RGB
-            self.colorize(value)
-          })
-          .collect()
-      })
-      .collect()
+        s.spawn(move |_| unsafe {
+          let out_ptr = out_atomic_ptr_clone.load(std::sync::atomic::Ordering::Relaxed);
+
+          work_loop_unsafe(
+            pool_clone, out_ptr, width, height, left, top, vw, vh, smooth, self,
+          );
+        });
+      }
+    });
+
+    out.chunks(width as usize).map(|row| row.to_vec()).collect()
   }
 
-  fn colorize(&self, iter: f64) -> Rgb<u8> {
+  pub fn colorize(&self, iter: f64) -> Rgb<u8> {
     if iter >= self.max_iterations as f64 {
       return Rgb([0, 0, 0]);
     }
@@ -71,8 +77,128 @@ impl Fractal {
   }
 }
 
-// Check if the point is in the main cardioid or period 2 bulb
-// work only for power=2 mandelbrot set
+unsafe fn work_loop_unsafe(
+  work_pool: Arc<SegQueue<Tile>>,
+  out_ptr: *mut Rgb<u8>,
+  width: u32,
+  height: u32,
+  left: f64,
+  top: f64,
+  vw: f64,
+  vh: f64,
+  smooth: bool,
+  fractal: &Fractal,
+) {
+  loop {
+    let tile_result = work_pool.pop();
+
+    let current_tile = if let Some(tile) = tile_result {
+      tile
+    } else {
+      break;
+    };
+
+    let check_and_compute = |x: u32, y: u32| -> Rgb<u8> {
+      let val = compute(x, y, width, height, left, top, vw, vh, smooth, fractal);
+
+      let index = idx(width, x, y);
+      unsafe {
+        ptr::write(out_ptr.add(index), val);
+      };
+      val
+    };
+
+    let x1 = current_tile.x0 + current_tile.w - 1;
+    let y1 = current_tile.y0 + current_tile.h - 1;
+
+    if current_tile.w <= MIN_TILE || current_tile.h <= MIN_TILE {
+      for x in current_tile.x0..=x1 {
+        for y in current_tile.y0..=y1 {
+          check_and_compute(x, y);
+        }
+      }
+      continue;
+    }
+
+    let mut is_interior = true;
+    let corner_value = check_and_compute(current_tile.x0, current_tile.y0);
+
+    for x in current_tile.x0..=x1 {
+      let val_t = check_and_compute(x, current_tile.y0);
+      if val_t != corner_value {
+        is_interior = false;
+      }
+      if y1 != current_tile.y0 {
+        let val_b = check_and_compute(x, y1);
+        if val_b != corner_value {
+          is_interior = false;
+        }
+      }
+    }
+
+    for y in (current_tile.y0 + 1)..y1 {
+      let val_l = check_and_compute(current_tile.x0, y);
+      if val_l != corner_value {
+        is_interior = false;
+      }
+      if x1 != current_tile.x0 {
+        let val_r = check_and_compute(x1, y);
+        if val_r != corner_value {
+          is_interior = false;
+        }
+      }
+    }
+
+    if is_interior {
+      for x in (current_tile.x0 + 1)..(current_tile.x0 + current_tile.w - 1) {
+        for y in (current_tile.y0 + 1)..(current_tile.y0 + current_tile.h - 1) {
+          unsafe {
+            ptr::write(out_ptr.add(idx(width, x, y)), corner_value);
+          };
+        }
+      }
+    } else {
+      let hw = current_tile.w / 2;
+      let hh = current_tile.h / 2;
+      let w0 = hw;
+      let h0 = hh;
+      let w1 = current_tile.w - hw;
+      let h1 = current_tile.h - hh;
+
+      let children = vec![
+        Tile {
+          x0: current_tile.x0,
+          y0: current_tile.y0,
+          w: w0,
+          h: h0,
+        },
+        Tile {
+          x0: current_tile.x0 + w0,
+          y0: current_tile.y0,
+          w: w1,
+          h: h0,
+        },
+        Tile {
+          x0: current_tile.x0,
+          y0: current_tile.y0 + h0,
+          w: w0,
+          h: h1,
+        },
+        Tile {
+          x0: current_tile.x0 + w0,
+          y0: current_tile.y0 + h0,
+          w: w1,
+          h: h1,
+        },
+      ];
+
+      for child in children {
+        work_pool.push(child);
+      }
+    }
+  }
+}
+
 #[inline(always)]
 fn in_bulb(c: Complex) -> bool {
   let x = c.re - 0.25;
@@ -88,4 +214,57 @@ fn in_bulb(c: Complex) -> bool {
   }
 
   false
+}
+
+#[inline(always)]
+fn compute(
+  x: u32,
+  y: u32,
+  width: u32,
+  height: u32,
+  left: f64,
+  top: f64,
+  vw: f64,
+  vh: f64,
+  smooth: bool,
+  fractal: &Fractal,
+) -> Rgb<u8> {
+  let cx = left + x as f64 * vw / width as f64;
+  let cy = top + y as f64 * vh / height as f64;
+  let c0 = Complex::new(cx, cy);
+  let z0 = Complex::new(0.0, 0.0);
+
+  let (iter, final_z) = match fractal.set {
+    Set::Mandelbrot => {
+      if fractal.power == 2.0 && in_bulb(c0) {
+        (fractal.max_iterations, z0)
+      } else {
+        iterate_mandelbrot(z0, c0, fractal.max_iterations, fractal.power)
+      }
+    }
+    Set::Julia => iterate_julia(c0, fractal.julia_c, fractal.max_iterations, fractal.power),
+    Set::BurningShip => iterate_burningship(z0, c0, fractal.max_iterations),
+    Set::Phoenix => iterate_phoenix(
+      z0,
+      c0,
+      fractal.phoenix_p,
+      fractal.max_iterations,
+      fractal.power,
+    ),
+  };
+
+  let value = if smooth && iter < fractal.max_iterations {
+    let log_zn = final_z.abs_sq().sqrt().ln().ln();
+    iter as f64 + SMOOTH_OFFSET - log_zn / LOG2
+  } else {
+    iter as f64
+  };
+
+  let color = fractal.colorize(value);
+  color
+}
+
+#[inline(always)]
+fn idx(width: u32, x: u32, y: u32) -> usize {
+  (y as usize) * (width as usize) + (x as usize)
 }

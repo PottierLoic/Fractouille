@@ -1,5 +1,7 @@
 use crate::app::App;
 use crate::command::Command;
+use crate::complex::Complex;
+use crate::export::video::save_julia_rotation;
 use crate::export::{save_image, save_video};
 use crate::fractal::Fractal;
 use crate::palette::{InterpolationMode, Palette};
@@ -86,6 +88,24 @@ pub fn execute_command(app: &mut App, cmd: Command) -> Result<String> {
       app.show_record_popup = true;
       app.record_progress = 0.0;
       match save_video(&app.fractal, width, height, start, end, speed, tx) {
+        Ok(path) => Ok(format!("Record frames saved in {}", path.display())),
+        Err(e) => Ok(format!("Failed to save record frames: {}", e)),
+      }
+    }
+    Command::RecordJulia(width, height, duration, real, imag, speed) => {
+      let (tx, rx) = std::sync::mpsc::channel();
+      app.progress_rx = Some(rx);
+      app.show_record_popup = true;
+      app.record_progress = 0.0;
+      match save_julia_rotation(
+        &app.fractal,
+        width,
+        height,
+        duration,
+        Complex { re: real, im: imag },
+        speed,
+        tx,
+      ) {
         Ok(path) => Ok(format!("Record frames saved in {}", path.display())),
         Err(e) => Ok(format!("Failed to save record frames: {}", e)),
       }
