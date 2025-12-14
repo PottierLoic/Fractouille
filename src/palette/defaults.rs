@@ -15,7 +15,7 @@ pub fn default_palettes() -> Vec<Palette> {
         (230, 120, 50),
         (250, 200, 40),
       ],
-      interpolation: InterpolationMode::Cosine,
+      interpolation: InterpolationMode::HsvCyclic,
       cycle_speed: 20.0,
     },
     // 2. Fire
@@ -31,7 +31,7 @@ pub fn default_palettes() -> Vec<Palette> {
         (255, 200, 50),
         (255, 255, 100),
       ],
-      interpolation: InterpolationMode::Linear,
+      interpolation: InterpolationMode::HsvCyclic,
       cycle_speed: 20.0,
     },
     // 3. Ocean
@@ -47,7 +47,7 @@ pub fn default_palettes() -> Vec<Palette> {
         (140, 230, 255),
         (200, 255, 255),
       ],
-      interpolation: InterpolationMode::Linear,
+      interpolation: InterpolationMode::HsvCyclic,
       cycle_speed: 20.0,
     },
     // 4. Ice
@@ -63,7 +63,7 @@ pub fn default_palettes() -> Vec<Palette> {
         (40, 100, 200),
         (10, 30, 120),
       ],
-      interpolation: InterpolationMode::Linear,
+      interpolation: InterpolationMode::HsvCyclic,
       cycle_speed: 20.0,
     },
     // 5. Neon
@@ -79,7 +79,7 @@ pub fn default_palettes() -> Vec<Palette> {
         (120, 255, 80),
         (180, 255, 0),
       ],
-      interpolation: InterpolationMode::Linear,
+      interpolation: InterpolationMode::HsvCyclic,
       cycle_speed: 20.0,
     },
     // 6. Earth
@@ -97,7 +97,7 @@ pub fn default_palettes() -> Vec<Palette> {
         (100, 185, 120),
         (120, 200, 180),
       ],
-      interpolation: InterpolationMode::Linear,
+      interpolation: InterpolationMode::HsvCyclic,
       cycle_speed: 20.0,
     },
     // 7. Rainbow
