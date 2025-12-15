@@ -385,6 +385,7 @@ pub fn parse_palette_mode(parts: &[&str]) -> Command {
     "cosine" => Command::PaletteMode(InterpolationMode::Cosine),
     "hsv" => Command::PaletteMode(InterpolationMode::Hsv),
     "hsv_cyclic" => Command::PaletteMode(InterpolationMode::HsvCyclic),
+    "none" => Command::PaletteMode(InterpolationMode::None),
     _ => Command::Unknown(format!("Unknown palette interpolation mode: {}", parts[2])),
   }
 }

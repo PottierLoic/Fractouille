@@ -142,6 +142,7 @@ pub fn execute_command(app: &mut App, cmd: Command) -> Result<String> {
     }
     Command::PaletteMode(mode) => {
       app.fractal.palette[app.fractal.current_palette].interpolation = mode;
+      app.fractal_view.need_render = true;
       Ok(format!(
         "Change interpolation mode of palette {} to {:?}",
         app.fractal.current_palette, app.fractal.palette[app.fractal.current_palette].interpolation
