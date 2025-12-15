@@ -121,6 +121,7 @@ pub fn start_sixel_rendering() {
       let img = app.fractal.render_frame(WIDTH, HEIGHT, false);
       let mut out = String::new();
 
+      out.push_str("\x1b[H");
       out.push_str("\x1bPq");
       out.push_str(&format!("\"1;1;{};{}", WIDTH, HEIGHT));
       for (i, (r, g, b)) in app.fractal.palette[app.fractal.current_palette]
@@ -157,15 +158,17 @@ pub fn start_sixel_rendering() {
         }
         out.push('-');
       }
-
       out.push_str("\x1b\\");
-      clear_terminal();
-      print!("{}", out);
-      print!("\ruse wasd to move | =/- to zoom | r/f...");
-      print!("\r\ntype q to quit\r\n");
+      out.push_str("use wasd to move | =/- to zoom | r/f\n");
+      out.push_str("type q to quit\n");
       if command_mode {
-        println!("command mode activated: {}", command_string);
+        out.push_str(&format!("command mode: {}\n", command_string));
+      } else {
+        out.push_str("\x1b[K\n");
       }
+
+      print!("{}", out);
+      io::stdout().flush().unwrap();
     }
   }
   disable_raw_mode().unwrap();
