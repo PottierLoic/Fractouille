@@ -1,8 +1,15 @@
-use crate::fractal::{Fractal, Set};
+use crate::app::App;
+use crate::command::{execute_command, parse_command};
+use crate::fractal::Set;
+use crate::palette::InterpolationMode;
+use crossterm::{
+  event::{self, Event, KeyCode},
+  terminal::{disable_raw_mode, enable_raw_mode},
+};
 use image::Rgb;
 use std::io::{self, Write};
 use std::process::exit;
-use crate::palette::InterpolationMode;
+use std::time::Duration;
 
 const HEIGHT: u32 = 600;
 const WIDTH: u32 = 600;
@@ -17,9 +24,11 @@ fn to_sixel(v: u8) -> u32 {
 }
 
 pub fn start_sixel_rendering() {
-  let mut fractal = Fractal::default();
+  let mut app = App::default();
   let mut set_selected = false;
-  fractal.palette[0].interpolation = InterpolationMode::None;
+  for palette in &mut app.fractal.palette {
+    palette.interpolation = InterpolationMode::None;
+  }
 
   while !set_selected {
     clear_terminal();
@@ -32,103 +41,132 @@ pub fn start_sixel_rendering() {
 
     match input.trim() {
       "1" => {
-        fractal.set = Set::Mandelbrot;
+        app.fractal.set = Set::Mandelbrot;
         set_selected = true;
       }
       "2" => {
-        fractal.set = Set::Julia;
+        app.fractal.set = Set::Julia;
         set_selected = true;
       }
       "3" => {
-        fractal.set = Set::BurningShip;
+        app.fractal.set = Set::BurningShip;
         set_selected = true;
       }
+      "4" => exit(0),
       _ => continue,
     }
     clear_terminal();
   }
+
+  let mut command_mode = false;
+  let mut command_string = String::new();
+
+  enable_raw_mode().unwrap();
+  let mut first_render = true;
+  let mut refresh = false;
 
   loop {
-    let base_width = 3.5;
-    let view_width = base_width / fractal.scale;
-    let aspect = HEIGHT as f64 / WIDTH as f64;
-
-    let dx = view_width / 4.0;
-    let dy = dx * aspect;
-
-    clear_terminal();
-    let img = fractal.render_frame(WIDTH, HEIGHT, false);
-
-    let mut out = String::new();
-
-    out.push_str("\x1bPq");
-    out.push_str(&format!("\"1;1;{};{}", WIDTH, HEIGHT));
-    for (i, (r, g, b)) in fractal.palette[0].stops.iter().enumerate() {
-      out.push_str(&format!(
-        "#{};2;{};{};{}",
-        i,
-        to_sixel(*r),
-        to_sixel(*g),
-        to_sixel(*b)
-      ));
+    let mut last_key = None;
+    while event::poll(Duration::from_millis(0)).unwrap() {
+      if let Event::Key(key) = event::read().unwrap() {
+        last_key = Some(key);
+      }
     }
 
-    for y in (0..HEIGHT).step_by(6) {
-      for c in 0..fractal.palette[0].stops.len() {
-        let color = fractal.palette[0].stops[c];
-        out.push_str(&format!("#{}", c));
-
-        for x in 0..WIDTH {
-          let mut bits = 0;
-          for bit in 0..6 {
-            if y + bit < HEIGHT
-              && img[(y + bit) as usize][x as usize] == Rgb([color.0, color.1, color.2])
-            {
-              bits |= 1 << bit;
-            }
+    if let Some(key) = last_key {
+      refresh = true;
+      if !command_mode {
+        match key.code {
+          KeyCode::Char('q') => break,
+          KeyCode::Char('w') => app.fractal.z.im -= 0.1 / app.fractal.scale,
+          KeyCode::Char('s') => app.fractal.z.im += 0.1 / app.fractal.scale,
+          KeyCode::Char('a') => app.fractal.z.re -= 0.1 / app.fractal.scale,
+          KeyCode::Char('d') => app.fractal.z.re += 0.1 / app.fractal.scale,
+          KeyCode::Char('=') => app.fractal.scale *= 1.1,
+          KeyCode::Char('-') => app.fractal.scale /= 1.1,
+          KeyCode::Char('r') => app.fractal.max_iterations += 1,
+          KeyCode::Char('f') => app.fractal.max_iterations -= 1,
+          KeyCode::Char(':') => {
+            command_mode = true;
+            command_string.clear();
           }
-          out.push((63 + bits) as u8 as char);
+          _ => refresh = false,
         }
-        out.push('$');
+      } else {
+        match key.code {
+          KeyCode::Esc => {
+            command_mode = false;
+            command_string.clear();
+          }
+          KeyCode::Enter => {
+            let cmd = parse_command(&command_string);
+            let _ = execute_command(&mut app, cmd).unwrap_or_else(|err| format!("Error: {}", err));
+            command_mode = false;
+            command_string.clear();
+          }
+          KeyCode::Backspace => {
+            command_string.pop();
+          }
+          KeyCode::Char(c) => {
+            command_string.push(c);
+          }
+          _ => {}
+        }
       }
-      out.push('-');
     }
 
-    out.push_str("\x1b\\");
-    print!("{}", out);
-    println!(" 1 | 2 ");
-    println!("---+---");
-    println!(" 3 | 4 ");
-    println!("Selection a quadrant to zoom in.");
-    println!("type q to quit.");
-    io::stdout().flush().unwrap();
-    let mut input = String::new();
-    if io::stdin().read_line(&mut input).is_err() {
-      continue;
-    }
-    match input.trim() {
-      "1" => {
-        fractal.z.re -= dx;
-        fractal.z.im -= dy;
-        fractal.scale *= 2.0;
+    if first_render || refresh {
+      first_render = false;
+      refresh = false;
+      let img = app.fractal.render_frame(WIDTH, HEIGHT, false);
+      let mut out = String::new();
+
+      out.push_str("\x1bPq");
+      out.push_str(&format!("\"1;1;{};{}", WIDTH, HEIGHT));
+      for (i, (r, g, b)) in app.fractal.palette[app.fractal.current_palette]
+        .stops
+        .iter()
+        .enumerate()
+      {
+        out.push_str(&format!(
+          "#{};2;{};{};{}",
+          i,
+          to_sixel(*r),
+          to_sixel(*g),
+          to_sixel(*b)
+        ));
       }
-      "2" => {
-        fractal.z.re += dx;
-        fractal.z.im -= dy;
-        fractal.scale *= 2.0;
+
+      for y in (0..HEIGHT).step_by(6) {
+        for c in 0..app.fractal.palette[app.fractal.current_palette].stops.len() {
+          let color = app.fractal.palette[app.fractal.current_palette].stops[c];
+          out.push_str(&format!("#{}", c));
+
+          for x in 0..WIDTH {
+            let mut bits = 0;
+            for bit in 0..6 {
+              if y + bit < HEIGHT
+                && img[(y + bit) as usize][x as usize] == Rgb([color.0, color.1, color.2])
+              {
+                bits |= 1 << bit;
+              }
+            }
+            out.push((63 + bits) as u8 as char);
+          }
+          out.push('$');
+        }
+        out.push('-');
       }
-      "3" => {
-        fractal.z.re -= dx;
-        fractal.z.im += dy;
-        fractal.scale *= 2.0;
+
+      out.push_str("\x1b\\");
+      clear_terminal();
+      print!("{}", out);
+      print!("\ruse wasd to move | =/- to zoom | r/f...");
+      print!("\r\ntype q to quit\r\n");
+      if command_mode {
+        println!("command mode activated: {}", command_string);
       }
-      "4" => {
-        fractal.z.re += dx;
-        fractal.z.im += dy;
-        fractal.scale *= 2.0;
-      }
-      "q" => exit(0),
-      _ => continue,
     }
   }
+  disable_raw_mode().unwrap();
 }
