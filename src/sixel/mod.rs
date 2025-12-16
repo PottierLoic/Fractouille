@@ -120,15 +120,14 @@ pub fn start_sixel_rendering() {
       refresh = false;
       let img = app.fractal.render_frame(WIDTH, HEIGHT, false);
       let mut out = String::new();
+      let palette = &app.fractal.palette[app.fractal.current_palette];
+      let black_index = palette.stops.len();
+      let total_colors = black_index + 1;
 
       out.push_str("\x1b[H");
-      out.push_str("\x1bPq");
+      out.push_str("\x1bP9;1q");
       out.push_str(&format!("\"1;1;{};{}", WIDTH, HEIGHT));
-      for (i, (r, g, b)) in app.fractal.palette[app.fractal.current_palette]
-        .stops
-        .iter()
-        .enumerate()
-      {
+      for (i, (r, g, b)) in palette.stops.iter().enumerate() {
         out.push_str(&format!(
           "#{};2;{};{};{}",
           i,
@@ -137,18 +136,28 @@ pub fn start_sixel_rendering() {
           to_sixel(*b)
         ));
       }
+      out.push_str(&format!("#{};2;0;0;0", black_index));
 
       for y in (0..HEIGHT).step_by(6) {
-        for c in 0..app.fractal.palette[app.fractal.current_palette].stops.len() {
-          let color = app.fractal.palette[app.fractal.current_palette].stops[c];
+        for c in 0..total_colors {
           out.push_str(&format!("#{}", c));
 
           for x in 0..WIDTH {
             let mut bits = 0;
             for bit in 0..6 {
-              if y + bit < HEIGHT
-                && img[(y + bit) as usize][x as usize] == Rgb([color.0, color.1, color.2])
-              {
+              if y + bit >= HEIGHT {
+                continue;
+              }
+
+              let px = img[(y + bit) as usize][x as usize];
+              let matches = if c == black_index {
+                px == Rgb([0, 0, 0])
+              } else {
+                let (r, g, b) = palette.stops[c];
+                px == Rgb([r, g, b])
+              };
+
+              if matches {
                 bits |= 1 << bit;
               }
             }
