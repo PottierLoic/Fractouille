@@ -169,7 +169,7 @@ pub fn start_sixel_rendering() {
       }
       out.push_str("\x1b\\");
       out.push_str("use wasd to move | =/- to zoom | r/f to change max iterations\n");
-      out.push_str("type q to quit\n");
+      out.push_str(": to enter command mode | q to quit\n");
       if command_mode {
         out.push_str(&format!("command mode: {}\n", command_string));
       } else {
