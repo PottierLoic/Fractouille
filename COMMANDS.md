@@ -39,7 +39,9 @@ This is a list of all the available commands in Fractouille. They can be entered
   Sets the fractal set type. Available types: mandelbrot, julia, burningship, phoenix
 
 - `record <width> <height> <start> <end> <speed>`
-  Record frames of specified size from `start` to `end` zoom level. Can then be used to make a video using external tools.
+  Record a zoom video of specified size from `start` to `end` zoom level. **Need ffmpeg installed**
+
+- `record_julia <w> <h> <duration> <real> <imag> <speed>` Record a video of the julia set, not zooming but rotating the constant. **Need ffmpeg installed**
 
 - `cycle_speed <n>`
   Set the `cycle_speed` value of current palette  to `n`, it controls the speed at which the palette will cycle through colors.
