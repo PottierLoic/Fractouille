@@ -43,5 +43,5 @@ pub static COMMAND_NAMES: &[&str] = &[
   "palette create <r0> <g0> <b0> ... <rn> <gn> <bn>",
   "palette use <index>",
   "palette delete <index>",
-  "palette mode <linear|cosine|hsv|hsv_cyclic>",
+  "palette mode <linear|cosine|hsv|hsv_cyclic|none>",
 ];

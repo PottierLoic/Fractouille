@@ -22,6 +22,7 @@ impl Palette {
       InterpolationMode::Cosine => eval_cosine(self, t),
       InterpolationMode::Hsv => eval_hsv(self, t),
       InterpolationMode::HsvCyclic => eval_hsv_cyclic(self, t),
+      InterpolationMode::None => eval_none(self, t),
     }
   }
 

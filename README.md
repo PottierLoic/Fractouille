@@ -19,7 +19,7 @@ Fractouille is a simple fractal explorer running in your terminal.
 ## Requirements
 
 - Rust
-- FFmpeg (for video recording)
+- ffmpeg (for video recording)
 
 ## Usage
 
@@ -34,6 +34,11 @@ cargo run
 # or install and run from anywhere
 cargo install --path .
 fractouille
+```
+
+```bash
+# sixel mode to have pure terminal graphics
+fractouille --sixel
 ```
 
 ## Keybinds

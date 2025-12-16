@@ -4,14 +4,29 @@ mod complex;
 mod export;
 mod fractal;
 mod palette;
+mod sixel;
 mod ui;
 
-use color_eyre::Result;
+use clap::Parser;
 
-fn main() -> Result<()> {
-  color_eyre::install()?;
-  let term = ratatui::init();
-  let res = app::App::default().run(term);
-  ratatui::restore();
-  res
+#[derive(Parser)]
+struct Args {
+  /// Render using SIXEL output
+  #[arg(long)]
+  sixel: bool,
+}
+
+fn main() {
+  color_eyre::install().expect("panic");
+  let args = Args::parse();
+
+  if args.sixel {
+    sixel::start_sixel_rendering();
+  } else {
+    let term = ratatui::init();
+    app::App::default()
+      .run(term)
+      .expect("App encountered an error");
+    ratatui::restore();
+  }
 }
