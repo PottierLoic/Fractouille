@@ -2,6 +2,7 @@ use crate::app::App;
 use crate::command::{execute_command, parse_command};
 use crate::fractal::Set;
 use crate::palette::InterpolationMode;
+use crossterm::event::KeyEventKind;
 use crossterm::{
   event::{self, Event, KeyCode},
   terminal::{disable_raw_mode, enable_raw_mode},
@@ -66,7 +67,9 @@ pub fn start_sixel_rendering(width: u32, height: u32) {
     let mut last_key = None;
     while event::poll(Duration::from_millis(0)).unwrap() {
       if let Event::Key(key) = event::read().unwrap() {
-        last_key = Some(key);
+        if key.kind == KeyEventKind::Press {
+          last_key = Some(key);
+        }
       }
     }
 
