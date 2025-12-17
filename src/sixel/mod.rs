@@ -11,9 +11,6 @@ use std::io::{self, Write};
 use std::process::exit;
 use std::time::Duration;
 
-const HEIGHT: u32 = 600;
-const WIDTH: u32 = 600;
-
 fn clear_terminal() {
   print!("\x1b[2J\x1b[H");
   io::stdout().flush().unwrap();
@@ -23,7 +20,7 @@ fn to_sixel(v: u8) -> u32 {
   v as u32 * 100 / 255
 }
 
-pub fn start_sixel_rendering() {
+pub fn start_sixel_rendering(width: u32, height: u32) {
   let mut app = App::default();
   let mut set_selected = false;
   for palette in &mut app.fractal.palette {
@@ -118,7 +115,7 @@ pub fn start_sixel_rendering() {
     if first_render || refresh {
       first_render = false;
       refresh = false;
-      let img = app.fractal.render_frame(WIDTH, HEIGHT, false);
+      let img = app.fractal.render_frame(width, height, false);
       let mut out = String::new();
       let palette = &app.fractal.palette[app.fractal.current_palette];
       let black_index = palette.stops.len();
@@ -126,7 +123,7 @@ pub fn start_sixel_rendering() {
 
       out.push_str("\x1b[H");
       out.push_str("\x1bP9;1q");
-      out.push_str(&format!("\"1;1;{};{}", WIDTH, HEIGHT));
+      out.push_str(&format!("\"1;1;{};{}", width, height));
       for (i, (r, g, b)) in palette.stops.iter().enumerate() {
         out.push_str(&format!(
           "#{};2;{};{};{}",
@@ -138,14 +135,14 @@ pub fn start_sixel_rendering() {
       }
       out.push_str(&format!("#{};2;0;0;0", black_index));
 
-      for y in (0..HEIGHT).step_by(6) {
+      for y in (0..height).step_by(6) {
         for c in 0..total_colors {
           out.push_str(&format!("#{}", c));
 
-          for x in 0..WIDTH {
+          for x in 0..width {
             let mut bits = 0;
             for bit in 0..6 {
-              if y + bit >= HEIGHT {
+              if y + bit >= height {
                 continue;
               }
 
