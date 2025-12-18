@@ -144,6 +144,9 @@ pub fn start_sixel_rendering(width: u32, height: u32, ratio: f64) {
       }
       out.push_str(&format!("#{};2;0;0;0", black_index));
 
+      let screen_center = height as f64 / 2.0;
+      let buffer_center = render_h as f64 / 2.0;
+
       for y in (0..height).step_by(6) {
         for c in 0..total_colors {
           out.push_str(&format!("#{}", c));
@@ -151,12 +154,12 @@ pub fn start_sixel_rendering(width: u32, height: u32, ratio: f64) {
           for x in 0..width {
             let mut bits = 0;
             for bit in 0..6 {
-              if y + bit >= height {
+              let current_y = y + bit;
+              if current_y >= height {
                 continue;
               }
 
-              let source_y = ((y + bit) as f64 / pixel_ratio) as usize;
-
+              let source_y = (buffer_center + (current_y as f64 - screen_center) / pixel_ratio) as usize;
               let px = img[source_y][x as usize];
               let matches = if c == black_index {
                 px == Rgb([0, 0, 0])
