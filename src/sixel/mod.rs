@@ -21,12 +21,14 @@ fn to_sixel(v: u8) -> u32 {
   v as u32 * 100 / 255
 }
 
-pub fn start_sixel_rendering(width: u32, height: u32) {
+pub fn start_sixel_rendering(width: u32, height: u32, ratio: f64) {
   let mut app = App::default();
   let mut set_selected = false;
   for palette in &mut app.fractal.palette {
     palette.interpolation = InterpolationMode::None;
   }
+
+  let mut pixel_ratio = ratio;
 
   while !set_selected {
     clear_terminal();
@@ -86,6 +88,8 @@ pub fn start_sixel_rendering(width: u32, height: u32) {
           KeyCode::Char('-') => app.fractal.scale /= 1.1,
           KeyCode::Char('r') => app.fractal.max_iterations += 1,
           KeyCode::Char('f') => app.fractal.max_iterations -= 1,
+          KeyCode::Char('[') => pixel_ratio -= 0.01,
+          KeyCode::Char(']') => pixel_ratio += 0.01,
           KeyCode::Char(':') => {
             command_mode = true;
             command_string.clear();
@@ -118,7 +122,9 @@ pub fn start_sixel_rendering(width: u32, height: u32) {
     if first_render || refresh {
       first_render = false;
       refresh = false;
-      let img = app.fractal.render_frame(width, height, false);
+
+      let render_h = (height as f64 / pixel_ratio).max(height as f64) as u32;
+      let img = app.fractal.render_frame(width, render_h, false);
       let mut out = String::new();
       let palette = &app.fractal.palette[app.fractal.current_palette];
       let black_index = palette.stops.len();
@@ -149,7 +155,9 @@ pub fn start_sixel_rendering(width: u32, height: u32) {
                 continue;
               }
 
-              let px = img[(y + bit) as usize][x as usize];
+              let source_y = ((y + bit) as f64 / pixel_ratio) as usize;
+
+              let px = img[source_y][x as usize];
               let matches = if c == black_index {
                 px == Rgb([0, 0, 0])
               } else {
@@ -169,6 +177,10 @@ pub fn start_sixel_rendering(width: u32, height: u32) {
       }
       out.push_str("\x1b\\");
       out.push_str("use wasd to move | =/- to zoom | r/f to change max iterations\n");
+      out.push_str(&format!(
+        "pixel ratio: {:.2} | [/] to change it\n",
+        pixel_ratio
+      ));
       out.push_str(": to enter command mode | q to quit\n");
       if command_mode {
         out.push_str(&format!("command mode: {}\n", command_string));
