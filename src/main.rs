@@ -17,12 +17,12 @@ struct Args {
 
   /// Width of the Sixel image (default: 600)
   /// Only used if --sixel is present
-  #[arg(short = 'w', requires = "sixel", default_value_t = 600)]
+  #[arg(long, requires = "sixel", default_value_t = 600)]
   width: u32,
 
   /// Height of the Sixel image (default: 600)
   /// Only used if --sixel is present
-  #[arg(short = 'h', requires = "sixel", default_value_t = 600)]
+  #[arg(long, requires = "sixel", default_value_t = 600)]
   height: u32,
 
   /// Aspect ratio of the terminal (default: 1.0 for 1:2 fonts)
