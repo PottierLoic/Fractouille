@@ -12,6 +12,13 @@ use std::io::{self, Write};
 use std::process::exit;
 use std::time::Duration;
 
+const RED: &str = "\x1b[31m";
+const GREEN: &str = "\x1b[32m";
+const YELLOW: &str = "\x1b[33m";
+const BLUE: &str = "\x1b[34m";
+const CYAN: &str = "\x1b[36m";
+const RESET: &str = "\x1b[0m";
+
 fn clear_terminal() {
   print!("\x1b[2J\x1b[H");
   io::stdout().flush().unwrap();
@@ -80,19 +87,28 @@ pub fn start_sixel_rendering(width: u32, height: u32, ratio: f64) {
       if !command_mode {
         match key.code {
           KeyCode::Char('q') => break,
-          KeyCode::Char('w') => app.fractal.z.im -= 0.1 / app.fractal.scale,
-          KeyCode::Char('s') => app.fractal.z.im += 0.1 / app.fractal.scale,
-          KeyCode::Char('a') => app.fractal.z.re -= 0.1 / app.fractal.scale,
-          KeyCode::Char('d') => app.fractal.z.re += 0.1 / app.fractal.scale,
-          KeyCode::Char('=') => app.fractal.scale *= 1.1,
+          KeyCode::Char('w') | KeyCode::Up => app.fractal.z.im -= 0.1 / app.fractal.scale,
+          KeyCode::Char('s') | KeyCode::Down => app.fractal.z.im += 0.1 / app.fractal.scale,
+          KeyCode::Char('a') | KeyCode::Left => app.fractal.z.re -= 0.1 / app.fractal.scale,
+          KeyCode::Char('d') | KeyCode::Right => app.fractal.z.re += 0.1 / app.fractal.scale,
+          KeyCode::Char('=') | KeyCode::Char('+') => app.fractal.scale *= 1.1,
           KeyCode::Char('-') => app.fractal.scale /= 1.1,
-          KeyCode::Char('r') => app.fractal.max_iterations += 1,
-          KeyCode::Char('f') => app.fractal.max_iterations -= 1,
-          KeyCode::Char('[') => pixel_ratio -= 0.01,
-          KeyCode::Char(']') => pixel_ratio += 0.01,
+          KeyCode::Char('r') | KeyCode::Char('*') => app.fractal.max_iterations += 1,
+          KeyCode::Char('f') | KeyCode::Char('/') => app.fractal.max_iterations -= 1,
+          KeyCode::Char('[') | KeyCode::PageDown => pixel_ratio -= 0.01,
+          KeyCode::Char(']') | KeyCode::PageUp => pixel_ratio += 0.01,
           KeyCode::Char(':') => {
             command_mode = true;
             command_string.clear();
+          }
+          KeyCode::Char(' ') => app.fractal.current_palette = (app.fractal.current_palette + 1) % app.fractal.palette.len(),
+          KeyCode::Enter => {
+            app.fractal.set = match app.fractal.set {
+              Set::Mandelbrot => Set::Julia,
+              Set::Julia => Set::BurningShip,
+              Set::BurningShip => Set::Phoenix,
+              Set::Phoenix => Set::Mandelbrot,
+            }
           }
           _ => refresh = false,
         }
@@ -179,14 +195,17 @@ pub fn start_sixel_rendering(width: u32, height: u32, ratio: f64) {
         out.push('-');
       }
       out.push_str("\x1b\\");
-      out.push_str("use wasd to move | =/- to zoom | r/f to change max iterations\n");
       out.push_str(&format!(
-        "pixel ratio: {:.2} | [/] to change it\n",
-        pixel_ratio
+        "{}Move:{} (WASD/Arrows) | {}Zoom:{} (+ or -) | {}Iter:{} (R or F) or Numpad (* or /)\n",
+        CYAN, RESET, GREEN, RESET, YELLOW, RESET
       ));
-      out.push_str(": to enter command mode | q to quit\n");
+      out.push_str(&format!(
+        "{}Ratio:{} {:.2} Use [ or ]\n",
+        BLUE, RESET, pixel_ratio
+      ));
+
       if command_mode {
-        out.push_str(&format!("command mode: {}\n", command_string));
+        out.push_str(&format!("{}command mode: {}{}\n", RED, command_string, RESET));
       } else {
         out.push_str("\x1b[K\n");
       }
