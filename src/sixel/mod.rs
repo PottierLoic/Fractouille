@@ -2,6 +2,7 @@ use crate::app::App;
 use crate::command::{execute_command, parse_command};
 use crate::fractal::Set;
 use crate::palette::InterpolationMode;
+use crossterm::event::KeyEventKind;
 use crossterm::{
   event::{self, Event, KeyCode},
   terminal::{disable_raw_mode, enable_raw_mode},
@@ -11,8 +12,12 @@ use std::io::{self, Write};
 use std::process::exit;
 use std::time::Duration;
 
-const HEIGHT: u32 = 600;
-const WIDTH: u32 = 600;
+const RED: &str = "\x1b[31m";
+const GREEN: &str = "\x1b[32m";
+const YELLOW: &str = "\x1b[33m";
+const BLUE: &str = "\x1b[34m";
+const CYAN: &str = "\x1b[36m";
+const RESET: &str = "\x1b[0m";
 
 fn clear_terminal() {
   print!("\x1b[2J\x1b[H");
@@ -23,12 +28,14 @@ fn to_sixel(v: u8) -> u32 {
   v as u32 * 100 / 255
 }
 
-pub fn start_sixel_rendering() {
+pub fn start_sixel_rendering(width: u32, height: u32, ratio: f64) {
   let mut app = App::default();
   let mut set_selected = false;
   for palette in &mut app.fractal.palette {
     palette.interpolation = InterpolationMode::None;
   }
+
+  let mut pixel_ratio = ratio;
 
   while !set_selected {
     clear_terminal();
@@ -69,7 +76,9 @@ pub fn start_sixel_rendering() {
     let mut last_key = None;
     while event::poll(Duration::from_millis(0)).unwrap() {
       if let Event::Key(key) = event::read().unwrap() {
-        last_key = Some(key);
+        if key.kind == KeyEventKind::Press {
+          last_key = Some(key);
+        }
       }
     }
 
@@ -78,17 +87,28 @@ pub fn start_sixel_rendering() {
       if !command_mode {
         match key.code {
           KeyCode::Char('q') => break,
-          KeyCode::Char('w') => app.fractal.z.im -= 0.1 / app.fractal.scale,
-          KeyCode::Char('s') => app.fractal.z.im += 0.1 / app.fractal.scale,
-          KeyCode::Char('a') => app.fractal.z.re -= 0.1 / app.fractal.scale,
-          KeyCode::Char('d') => app.fractal.z.re += 0.1 / app.fractal.scale,
-          KeyCode::Char('=') => app.fractal.scale *= 1.1,
+          KeyCode::Char('w') | KeyCode::Up => app.fractal.z.im -= 0.1 / app.fractal.scale,
+          KeyCode::Char('s') | KeyCode::Down => app.fractal.z.im += 0.1 / app.fractal.scale,
+          KeyCode::Char('a') | KeyCode::Left => app.fractal.z.re -= 0.1 / app.fractal.scale,
+          KeyCode::Char('d') | KeyCode::Right => app.fractal.z.re += 0.1 / app.fractal.scale,
+          KeyCode::Char('=') | KeyCode::Char('+') => app.fractal.scale *= 1.1,
           KeyCode::Char('-') => app.fractal.scale /= 1.1,
-          KeyCode::Char('r') => app.fractal.max_iterations += 1,
-          KeyCode::Char('f') => app.fractal.max_iterations -= 1,
+          KeyCode::Char('r') | KeyCode::Char('*') => app.fractal.max_iterations += 1,
+          KeyCode::Char('f') | KeyCode::Char('/') => app.fractal.max_iterations -= 1,
+          KeyCode::Char('[') | KeyCode::PageDown => pixel_ratio -= 0.01,
+          KeyCode::Char(']') | KeyCode::PageUp => pixel_ratio += 0.01,
           KeyCode::Char(':') => {
             command_mode = true;
             command_string.clear();
+          }
+          KeyCode::Char(' ') => app.fractal.current_palette = (app.fractal.current_palette + 1) % app.fractal.palette.len(),
+          KeyCode::Enter => {
+            app.fractal.set = match app.fractal.set {
+              Set::Mandelbrot => Set::Julia,
+              Set::Julia => Set::BurningShip,
+              Set::BurningShip => Set::Phoenix,
+              Set::Phoenix => Set::Mandelbrot,
+            }
           }
           _ => refresh = false,
         }
@@ -118,7 +138,9 @@ pub fn start_sixel_rendering() {
     if first_render || refresh {
       first_render = false;
       refresh = false;
-      let img = app.fractal.render_frame(WIDTH, HEIGHT, false);
+
+      let render_h = (height as f64 / pixel_ratio).max(height as f64) as u32;
+      let img = app.fractal.render_frame(width, render_h, false);
       let mut out = String::new();
       let palette = &app.fractal.palette[app.fractal.current_palette];
       let black_index = palette.stops.len();
@@ -126,7 +148,7 @@ pub fn start_sixel_rendering() {
 
       out.push_str("\x1b[H");
       out.push_str("\x1bP9;1q");
-      out.push_str(&format!("\"1;1;{};{}", WIDTH, HEIGHT));
+      out.push_str(&format!("\"1;1;{};{}", width, height));
       for (i, (r, g, b)) in palette.stops.iter().enumerate() {
         out.push_str(&format!(
           "#{};2;{};{};{}",
@@ -138,18 +160,23 @@ pub fn start_sixel_rendering() {
       }
       out.push_str(&format!("#{};2;0;0;0", black_index));
 
-      for y in (0..HEIGHT).step_by(6) {
+      let screen_center = height as f64 / 2.0;
+      let buffer_center = render_h as f64 / 2.0;
+
+      for y in (0..height).step_by(6) {
         for c in 0..total_colors {
           out.push_str(&format!("#{}", c));
 
-          for x in 0..WIDTH {
+          for x in 0..width {
             let mut bits = 0;
             for bit in 0..6 {
-              if y + bit >= HEIGHT {
+              let current_y = y + bit;
+              if current_y >= height {
                 continue;
               }
 
-              let px = img[(y + bit) as usize][x as usize];
+              let source_y = (buffer_center + (current_y as f64 - screen_center) / pixel_ratio) as usize;
+              let px = img[source_y][x as usize];
               let matches = if c == black_index {
                 px == Rgb([0, 0, 0])
               } else {
@@ -168,10 +195,17 @@ pub fn start_sixel_rendering() {
         out.push('-');
       }
       out.push_str("\x1b\\");
-      out.push_str("use wasd to move | =/- to zoom | r/f to change max iterations\n");
-      out.push_str(": to enter command mode | q to quit\n");
+      out.push_str(&format!(
+        "{}Move:{} (WASD/Arrows) | {}Zoom:{} (+ or -) | {}Iter:{} (R or F) or Numpad (* or /)\n",
+        CYAN, RESET, GREEN, RESET, YELLOW, RESET
+      ));
+      out.push_str(&format!(
+        "{}Ratio:{} {:.2} Use [ or ]\n",
+        BLUE, RESET, pixel_ratio
+      ));
+
       if command_mode {
-        out.push_str(&format!("command mode: {}\n", command_string));
+        out.push_str(&format!("{}command mode: {}{}\n", RED, command_string, RESET));
       } else {
         out.push_str("\x1b[K\n");
       }
