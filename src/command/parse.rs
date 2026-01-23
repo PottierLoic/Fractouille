@@ -311,16 +311,18 @@ pub fn parse_palette(parts: &[&str]) -> Command {
 }
 
 pub fn parse_palette_create(parts: &[&str]) -> Command {
-  if (parts.len() - 2) % 3 != 0 {
+  if (parts.len() - 3) % 3 != 0 {
     return Command::Unknown(format!(
-      "Usage: palette create <r0> <g0> <b0> ... <rn> <gn> <bn>. Got {} arguments",
+      "Usage: palette create <name> <r0> <g0> <b0> ... <rn> <gn> <bn>. Got {} arguments",
       parts.len() - 2
     ));
   }
 
+  let name = parts[2].to_string();
+
   let mut colors = Vec::new();
 
-  for chunk in parts[2..].chunks(3) {
+  for chunk in parts[3..].chunks(3) {
     let r = match chunk[0].parse::<u8>() {
       Ok(v) => v,
       Err(_) => return Command::Unknown(format!("Invalid red color: {}", chunk[0])),
@@ -337,7 +339,7 @@ pub fn parse_palette_create(parts: &[&str]) -> Command {
     colors.push((r, g, b));
   }
 
-  Command::PaletteCreate(colors)
+  Command::PaletteCreate(name, colors)
 }
 
 pub fn parse_palette_use(parts: &[&str]) -> Command {

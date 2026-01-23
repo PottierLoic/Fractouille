@@ -3,6 +3,7 @@ mod command;
 mod complex;
 mod export;
 mod fractal;
+mod gui;
 mod palette;
 mod sixel;
 mod ui;
@@ -14,6 +15,10 @@ struct Args {
   /// Render using SIXEL output
   #[arg(long)]
   sixel: bool,
+
+  /// Render using eframe GUI
+  #[arg(long)]
+  gui: bool,
 }
 
 fn main() {
@@ -22,11 +27,14 @@ fn main() {
 
   if args.sixel {
     sixel::start_sixel_rendering();
+    // TODO : Error handling
+  } else if args.gui {
+    gui::start_gui_app().expect("GUI app encountered an error");
   } else {
     let term = ratatui::init();
     app::App::default()
       .run(term)
-      .expect("App encountered an error");
+      .expect("Ratatui app encountered an error");
     ratatui::restore();
   }
 }

@@ -89,12 +89,10 @@ pub fn save_video(
 
       let mut frame_buffer = Vec::with_capacity((width * height * 3) as usize);
 
-      for row in &colors {
-        for pixel in row {
-          frame_buffer.push(pixel[0]);
-          frame_buffer.push(pixel[1]);
-          frame_buffer.push(pixel[2]);
-        }
+      for pixel in &colors {
+        frame_buffer.push(pixel.0[0]);
+        frame_buffer.push(pixel.0[1]);
+        frame_buffer.push(pixel.0[2]);
       }
 
       stdin.write_all(&frame_buffer)?;
@@ -197,12 +195,10 @@ pub fn save_julia_rotation(
 
       let mut frame_buffer = Vec::with_capacity((width * height * 3) as usize);
 
-      for row in &colors {
-        for pixel in row {
-          frame_buffer.push(pixel[0]);
-          frame_buffer.push(pixel[1]);
-          frame_buffer.push(pixel[2]);
-        }
+      for pixel in &colors {
+        frame_buffer.push(pixel.0[0]);
+        frame_buffer.push(pixel.0[1]);
+        frame_buffer.push(pixel.0[2]);
       }
 
       stdin.write_all(&frame_buffer)?;

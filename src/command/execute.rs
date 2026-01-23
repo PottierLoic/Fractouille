@@ -115,8 +115,8 @@ pub fn execute_command(app: &mut App, cmd: Command) -> Result<String> {
       app.fractal_view.need_render = true;
       Ok(format!("Color cycle updated to {}", cycle))
     }
-    Command::PaletteCreate(colors) => {
-      let palette = Palette::new(colors, InterpolationMode::Linear, 100.0);
+    Command::PaletteCreate(name, colors) => {
+      let palette = Palette::new(name, colors, InterpolationMode::Linear, 100.0);
       app.fractal.palette.push(palette);
       Ok(format!(
         "Palette inserted at index {}",

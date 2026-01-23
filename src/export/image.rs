@@ -26,9 +26,10 @@ pub fn save_image(
     let mut img = RgbImage::new(width, height);
     let colors = fractal.render_frame(width, height, true);
 
-    for (y, row) in colors.iter().enumerate() {
-      for (x, pixel) in row.iter().enumerate() {
-        img.put_pixel(x as u32, y as u32, *pixel);
+    for y in 0..height {
+      for x in 0..width {
+        let pixel = colors[(y * width + x) as usize];
+        img.put_pixel(x, y, pixel);
       }
     }
 

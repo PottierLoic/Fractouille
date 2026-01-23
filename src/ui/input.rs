@@ -25,7 +25,7 @@ impl App {
             }
             KeyCode::Enter => {
               self.command_mode = false;
-              self.command_result = execute_command(self, parse_command(&*self.command_string))
+              self.command_result = execute_command(self, parse_command(&self.command_string))
                 .unwrap_or_else(|err| format!("Error: {}", err));
               self.command_string.clear();
             }

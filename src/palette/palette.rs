@@ -2,14 +2,21 @@ use crate::palette::interpolation::*;
 
 #[derive(Debug, Clone)]
 pub struct Palette {
+  pub name: String,
   pub stops: Vec<(u8, u8, u8)>,
   pub interpolation: InterpolationMode,
   pub cycle_speed: f64,
 }
 
 impl Palette {
-  pub fn new(stops: Vec<(u8, u8, u8)>, interpolation: InterpolationMode, cycle_speed: f64) -> Self {
+  pub fn new(
+    name: String,
+    stops: Vec<(u8, u8, u8)>,
+    interpolation: InterpolationMode,
+    cycle_speed: f64,
+  ) -> Self {
     Palette {
+      name,
       stops,
       interpolation,
       cycle_speed,
