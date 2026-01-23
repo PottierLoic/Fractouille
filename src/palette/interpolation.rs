@@ -2,6 +2,7 @@ use crate::palette::palette::Palette;
 use crate::palette::utils::{hsv_to_rgb, rgb_to_hsv};
 
 #[derive(Debug, Clone)]
+#[derive(PartialEq)]
 pub enum InterpolationMode {
   Linear,
   Cosine,

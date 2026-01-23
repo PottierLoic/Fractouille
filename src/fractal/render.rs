@@ -24,7 +24,7 @@ struct Tile {
 }
 
 impl Fractal {
-  pub fn render_frame(&self, width: u32, height: u32, smooth: bool) -> Vec<Vec<Rgb<u8>>> {
+  pub fn render_frame(&self, width: u32, height: u32, smooth: bool) -> Vec<Rgb<u8>> {
     let aspect = width as f64 / height as f64;
     let vw = 3.5 / self.scale;
     let vh = vw / aspect;
@@ -63,7 +63,7 @@ impl Fractal {
       }
     });
 
-    out.chunks(width as usize).map(|row| row.to_vec()).collect()
+    out
   }
 
   pub fn colorize(&self, iter: f64) -> Rgb<u8> {
@@ -260,8 +260,7 @@ fn compute(
     iter as f64
   };
 
-  let color = fractal.colorize(value);
-  color
+  fractal.colorize(value)
 }
 
 #[inline(always)]

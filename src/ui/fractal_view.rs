@@ -31,10 +31,10 @@ impl FractalView {
     let raw = fractal.render_frame(w as u32, h as u32, false);
 
     self.colors = raw
-      .into_iter()
+      .chunks(w)
       .map(|row| {
         row
-          .into_iter()
+          .iter()
           .map(|rgb| Color::Rgb(rgb[0], rgb[1], rgb[2]))
           .collect()
       })

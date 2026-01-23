@@ -3,8 +3,8 @@ use crate::palette::palette::Palette;
 
 pub fn default_palettes() -> Vec<Palette> {
   vec![
-    // 1. Default
     Palette {
+      name: String::from("Default"),
       stops: vec![
         (30, 0, 50),
         (50, 5, 80),
@@ -18,8 +18,8 @@ pub fn default_palettes() -> Vec<Palette> {
       interpolation: InterpolationMode::HsvCyclic,
       cycle_speed: 20.0,
     },
-    // 2. Fire
     Palette {
+      name: String::from("Fire"),
       stops: vec![
         (0, 0, 0),
         (40, 0, 0),
@@ -34,8 +34,8 @@ pub fn default_palettes() -> Vec<Palette> {
       interpolation: InterpolationMode::HsvCyclic,
       cycle_speed: 20.0,
     },
-    // 3. Ocean
     Palette {
+      name: String::from("Ocean"),
       stops: vec![
         (0, 0, 30),
         (0, 10, 60),
@@ -50,8 +50,8 @@ pub fn default_palettes() -> Vec<Palette> {
       interpolation: InterpolationMode::HsvCyclic,
       cycle_speed: 20.0,
     },
-    // 4. Ice
     Palette {
+      name: String::from("Ice"),
       stops: vec![
         (250, 250, 255),
         (220, 235, 255),
@@ -66,8 +66,8 @@ pub fn default_palettes() -> Vec<Palette> {
       interpolation: InterpolationMode::HsvCyclic,
       cycle_speed: 20.0,
     },
-    // 5. Neon
     Palette {
+      name: String::from("Neon"),
       stops: vec![
         (255, 0, 150),
         (200, 0, 220),
@@ -82,8 +82,8 @@ pub fn default_palettes() -> Vec<Palette> {
       interpolation: InterpolationMode::HsvCyclic,
       cycle_speed: 20.0,
     },
-    // 6. Earth
     Palette {
+      name: String::from("Earth"),
       stops: vec![
         (40, 20, 0),
         (70, 35, 10),
@@ -100,8 +100,8 @@ pub fn default_palettes() -> Vec<Palette> {
       interpolation: InterpolationMode::HsvCyclic,
       cycle_speed: 20.0,
     },
-    // 7. Rainbow
     Palette {
+      name: String::from("Rainbow"),
       stops: vec![
         (255, 0, 0),
         (255, 64, 0),

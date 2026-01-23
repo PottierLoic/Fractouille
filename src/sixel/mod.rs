@@ -149,7 +149,9 @@ pub fn start_sixel_rendering() {
                 continue;
               }
 
-              let px = img[(y + bit) as usize][x as usize];
+              let row_idx = (y + bit) as usize;
+              let px = img[row_idx * WIDTH as usize + x as usize];
+
               let matches = if c == black_index {
                 px == Rgb([0, 0, 0])
               } else {
