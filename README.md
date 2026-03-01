@@ -41,11 +41,27 @@ fractouille
 fractouille --sixel
 ```
 
+```bash
+# original interactive explorer (manual controls)
+fractouille
+```
+
+```bash
+# infinite animate mode (Ctrl+C to stop)
+fractouille --animate
+```
+
+```bash
+# faster animate mode
+fractouille --animate --animate-fps 24 --animate-zoom-factor 1.03
+```
+
 ## Keybinds
 
 - `wasd`: Move around
 - `r/f`: adjust max iterations
 - `-/+`: adjust zoom level
+- `p`: toggle animate pause/resume
 - `space`: cycle color palette
 - `enter`: switch fractal set
 - `q`: quit fractouille

@@ -24,12 +24,13 @@ impl Widget for &mut App {
           self.fractal.set, self.fractal.current_palette
         ),
         format!(
-          "Position: ({:.6}, {:.6}) | Zoom: {:.2}x | Iterations: {} | Power: {:.2}",
+          "Position: ({:.6}, {:.6}) | Zoom: {:.2}x | Iterations: {} | Power: {:.2} | Animate: {}",
           self.fractal.z.re,
           self.fractal.z.im,
           self.fractal.scale,
           self.fractal.max_iterations,
-          self.fractal.power
+          self.fractal.power,
+          if self.auto_zoom.enabled { "on" } else { "off" }
         ),
         if self.fractal.set == Set::Julia {
           format!(
@@ -47,7 +48,7 @@ impl Widget for &mut App {
         } else {
           "".to_string()
         },
-        "wasd to move | r/f to change max iteration | -/+ to zoom | q to quit".to_string(),
+        "wasd move | r/f iterations | -/+ zoom | p animate toggle | q quit".to_string(),
         if self.command_mode {
           "Command Mode: ACTIVE (ESC to exit) | Type 'commands' for command list"
         } else {
@@ -59,11 +60,12 @@ impl Widget for &mut App {
     } else {
       let [title, _] = Layout::horizontal([Min(0), Length(8)]).areas(menu);
       Text::from(format!(
-        "Fractouille // Set: {:?} | Palette: {} | Zoom: {:.2}x | Iter: {} (:h to extend menu)",
+        "Fractouille // Set: {:?} | Palette: {} | Zoom: {:.2}x | Iter: {} | Animate: {} (:h to extend menu)",
         self.fractal.set,
         self.fractal.current_palette,
         self.fractal.scale,
-        self.fractal.max_iterations
+        self.fractal.max_iterations,
+        if self.auto_zoom.enabled { "on" } else { "off" }
       ))
       .centered()
       .render(title, buf);
