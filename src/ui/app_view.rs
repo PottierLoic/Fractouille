@@ -30,7 +30,7 @@ impl Widget for &mut App {
           self.fractal.scale,
           self.fractal.max_iterations,
           self.fractal.power,
-          if self.auto_zoom.enabled { "on" } else { "off" }
+          if self.animation.enabled { "on" } else { "off" }
         ),
         if self.fractal.set == Set::Julia {
           format!(
@@ -65,7 +65,7 @@ impl Widget for &mut App {
         self.fractal.current_palette,
         self.fractal.scale,
         self.fractal.max_iterations,
-        if self.auto_zoom.enabled { "on" } else { "off" }
+        if self.animation.enabled { "on" } else { "off" }
       ))
       .centered()
       .render(title, buf);

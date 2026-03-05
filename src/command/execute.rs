@@ -115,6 +115,27 @@ pub fn execute_command(app: &mut App, cmd: Command) -> Result<String> {
       app.fractal_view.need_render = true;
       Ok(format!("Color cycle updated to {}", cycle))
     }
+    Command::Animate(enabled) => {
+      app.animation.set_enabled(enabled);
+      Ok(format!(
+        "Animation {}",
+        if enabled { "enabled" } else { "disabled" }
+      ))
+    }
+    Command::AnimateFps(fps) => {
+      app
+        .animation
+        .set_fps(fps)
+        .map_err(|err| color_eyre::eyre::eyre!(err))?;
+      Ok(format!("Animation FPS updated to {}", fps))
+    }
+    Command::AnimateSpeed(speed) => {
+      app
+        .animation
+        .set_speed(speed)
+        .map_err(|err| color_eyre::eyre::eyre!(err))?;
+      Ok(format!("Animation speed updated to {}", speed))
+    }
     Command::PaletteCreate(colors) => {
       let palette = Palette::new(colors, InterpolationMode::Linear, 100.0);
       app.fractal.palette.push(palette);

@@ -5,7 +5,7 @@ use ratatui::crossterm::event;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind};
 impl App {
   pub fn handle_input(&mut self) -> color_eyre::Result<()> {
-    let timeout = self.auto_tick_interval();
+    let timeout = self.animation.tick_interval();
     if event::poll(timeout)? {
       if let Event::Key(key) = event::read()? {
         if key.kind != KeyEventKind::Press {
@@ -49,7 +49,7 @@ impl App {
               self.command_string.clear();
             }
             KeyCode::Char('q') => self.quit_requested = true,
-            KeyCode::Char('p') => self.auto_zoom.enabled = !self.auto_zoom.enabled,
+            KeyCode::Char('p') => self.animation.toggle(),
             KeyCode::Char('+') | KeyCode::Char('=') => f.scale *= 1.1,
             KeyCode::Char('-') => f.scale /= 1.1,
             KeyCode::Char('r') | KeyCode::Char('*') => f.max_iterations += 1,
@@ -77,7 +77,9 @@ impl App {
         }
       }
     }
-    self.tick_auto_zoom();
+    if self.animation.tick(&mut self.fractal) {
+      self.fractal_view.need_render = true;
+    }
 
     let mut finished = false;
     if let Some(rx) = &self.progress_rx {

@@ -101,7 +101,10 @@ pub fn start_sixel_rendering(width: u32, height: u32, ratio: f64) {
             command_mode = true;
             command_string.clear();
           }
-          KeyCode::Char(' ') => app.fractal.current_palette = (app.fractal.current_palette + 1) % app.fractal.palette.len(),
+          KeyCode::Char(' ') => {
+            app.fractal.current_palette =
+              (app.fractal.current_palette + 1) % app.fractal.palette.len()
+          }
           KeyCode::Enter => {
             app.fractal.set = match app.fractal.set {
               Set::Mandelbrot => Set::Julia,
@@ -175,7 +178,8 @@ pub fn start_sixel_rendering(width: u32, height: u32, ratio: f64) {
                 continue;
               }
 
-              let source_y = (buffer_center + (current_y as f64 - screen_center) / pixel_ratio) as usize;
+              let source_y =
+                (buffer_center + (current_y as f64 - screen_center) / pixel_ratio) as usize;
               let px = img[source_y][x as usize];
               let matches = if c == black_index {
                 px == Rgb([0, 0, 0])
@@ -205,7 +209,10 @@ pub fn start_sixel_rendering(width: u32, height: u32, ratio: f64) {
       ));
 
       if command_mode {
-        out.push_str(&format!("{}command mode: {}{}\n", RED, command_string, RESET));
+        out.push_str(&format!(
+          "{}command mode: {}{}\n",
+          RED, command_string, RESET
+        ));
       } else {
         out.push_str("\x1b[K\n");
       }

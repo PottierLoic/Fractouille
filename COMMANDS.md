@@ -46,6 +46,15 @@ This is a list of all the available commands in Fractouille. They can be entered
 - `cycle_speed <n>`
   Set the `cycle_speed` value of current palette  to `n`, it controls the speed at which the palette will cycle through colors.
 
+- `animate <on|off>`
+  Enables or disables continuous zoom animation.
+
+- `animate_fps <value>`
+  Sets the animation update rate in frames per second.
+
+- `animate_speed <value>`
+  Sets the zoom multiplier applied at each animation step.
+
 - `palette create <r0> <g0> <b0> ... <rn> <gn> <bn>`
   Creates a new custom palette from a list of RGB triplets. Each color is three integers (0–255). The palette is appended to the palette list and its index is returned.
 
