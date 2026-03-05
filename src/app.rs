@@ -1,3 +1,4 @@
+use crate::animation::AnimationState;
 use crate::fractal::Fractal;
 use crate::ui::FractalView;
 use ratatui::DefaultTerminal;
@@ -27,6 +28,7 @@ pub struct App {
   pub show_record_popup: bool,
   pub record_progress: f64,
   pub progress_rx: Option<std::sync::mpsc::Receiver<ProgressEvent>>,
+  pub animation: AnimationState,
 }
 
 impl App {

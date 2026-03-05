@@ -3,11 +3,9 @@ use crate::command::{execute_command, find_command_autocompletion, parse_command
 use crate::fractal::Set;
 use ratatui::crossterm::event;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind};
-use std::time::Duration;
-
 impl App {
   pub fn handle_input(&mut self) -> color_eyre::Result<()> {
-    let timeout = Duration::from_secs_f32(1.0 / 60.0);
+    let timeout = self.animation.tick_interval();
     if event::poll(timeout)? {
       if let Event::Key(key) = event::read()? {
         if key.kind != KeyEventKind::Press {
@@ -51,10 +49,13 @@ impl App {
               self.command_string.clear();
             }
             KeyCode::Char('q') => self.quit_requested = true,
+            KeyCode::Char('p') => self.animation.toggle(),
             KeyCode::Char('+') | KeyCode::Char('=') => f.scale *= 1.1,
             KeyCode::Char('-') => f.scale /= 1.1,
             KeyCode::Char('r') | KeyCode::Char('*') => f.max_iterations += 1,
-            KeyCode::Char('f') | KeyCode::Char('/') => f.max_iterations = f.max_iterations.saturating_sub(1),
+            KeyCode::Char('f') | KeyCode::Char('/') => {
+              f.max_iterations = f.max_iterations.saturating_sub(1)
+            }
             KeyCode::Char('a') | KeyCode::Left => f.z.re -= step,
             KeyCode::Char('d') | KeyCode::Right => f.z.re += step,
             KeyCode::Char('w') | KeyCode::Up => f.z.im -= step,
@@ -76,6 +77,10 @@ impl App {
         }
       }
     }
+    if self.animation.tick(&mut self.fractal) {
+      self.fractal_view.need_render = true;
+    }
+
     let mut finished = false;
     if let Some(rx) = &self.progress_rx {
       while let Ok(event) = rx.try_recv() {

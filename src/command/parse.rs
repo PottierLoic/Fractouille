@@ -23,6 +23,9 @@ pub fn parse_command(input: &str) -> Command {
     "record" => parse_record(&parts),
     "record_julia" => parse_record_julia(&parts),
     "cycle_speed" => parse_cycle_speed(&parts),
+    "animate" => parse_animate(&parts),
+    "animate_fps" => parse_animate_fps(&parts),
+    "animate_speed" => parse_animate_speed(&parts),
     "palette" => parse_palette(&parts),
 
     other => Command::Unknown(format!("Unknown command: {}", other)),
@@ -290,6 +293,51 @@ pub fn parse_cycle_speed(parts: &[&str]) -> Command {
   match parts[1].parse::<f64>() {
     Ok(v) => Command::CycleSpeed(v),
     Err(_) => Command::Unknown(format!("Invalid cycle value: {}", parts[1])),
+  }
+}
+
+pub fn parse_animate(parts: &[&str]) -> Command {
+  if parts.len() != 2 {
+    return Command::Unknown(format!(
+      "Usage: animate <on|off>. Got {} arguments",
+      parts.len() - 1
+    ));
+  }
+
+  match parts[1] {
+    "on" => Command::Animate(true),
+    "off" => Command::Animate(false),
+    _ => Command::Unknown(format!("Unknown animation mode: {}", parts[1])),
+  }
+}
+
+pub fn parse_animate_fps(parts: &[&str]) -> Command {
+  if parts.len() != 2 {
+    return Command::Unknown(format!(
+      "Usage: animate_fps <value>. Got {} arguments",
+      parts.len() - 1
+    ));
+  }
+
+  match parts[1].parse::<f64>() {
+    Ok(v) if v > 0.0 => Command::AnimateFps(v),
+    Ok(_) => Command::Unknown("Animation FPS must be positive".to_string()),
+    Err(_) => Command::Unknown(format!("Invalid animation FPS: {}", parts[1])),
+  }
+}
+
+pub fn parse_animate_speed(parts: &[&str]) -> Command {
+  if parts.len() != 2 {
+    return Command::Unknown(format!(
+      "Usage: animate_speed <value>. Got {} arguments",
+      parts.len() - 1
+    ));
+  }
+
+  match parts[1].parse::<f64>() {
+    Ok(v) if v > 0.0 => Command::AnimateSpeed(v),
+    Ok(_) => Command::Unknown("Animation speed must be positive".to_string()),
+    Err(_) => Command::Unknown(format!("Invalid animation speed: {}", parts[1])),
   }
 }
 

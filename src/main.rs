@@ -1,3 +1,4 @@
+mod animation;
 mod app;
 mod command;
 mod complex;

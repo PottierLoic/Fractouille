@@ -46,6 +46,7 @@ fractouille --sixel
 - `wasd`: Move around
 - `r/f`: adjust max iterations
 - `-/+`: adjust zoom level
+- `p`: toggle animate pause/resume
 - `space`: cycle color palette
 - `enter`: switch fractal set
 - `q`: quit fractouille
