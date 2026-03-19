@@ -2,82 +2,50 @@
 
 ![](example.png)
 
-Fractouille is a simple fractal explorer running in your terminal.
+A fractal exploration and rendering engine written in Rust.  
+Navigate Mandelbrot, Julia, Burning Ship and Phoenix sets in real-time and export high-resolution screenshots and zoom videos.  
 
 [![Rust](https://img.shields.io/badge/rust-1.86.0-orange.svg)](https://www.rust-lang.org/)
 [![Ratatui](https://img.shields.io/badge/Built_With_Ratatui-000?logo=ratatui&logoColor=fff)](https://ratatui.rs/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## Features
-
-- Multiple fractal sets (Mandelbrot, Julia, Burning Ship)
-- High-quality screenshot capture with smooth coloring
-- Zoom videos recording
-- Interactive navigation
-- Command mode for advanced usage
-
-## Requirements
-
-- Rust
-- ffmpeg (for video recording)
-
-## Usage
+## Getting started
 
 ```bash
-# clone the repository
 git clone https://github.com/pottierloic/fractouille
 cd fractouille
-
-# run directly
 cargo run
-
-# or install and run from anywhere
-cargo install --path .
-fractouille
 ```
 
+Sixel mode for true pixel rendering in compatible terminals:
+
 ```bash
-# sixel mode to have pure terminal graphics
 fractouille --sixel
 ```
 
-## Keybinds
+`ffmpeg` is required for video recording, see [`RECORD.md`](RECORD.md) for details.
 
-- `wasd`: Move around
-- `r/f`: adjust max iterations
-- `-/+`: adjust zoom level
-- `space`: cycle color palette
-- `enter`: switch fractal set
-- `q`: quit fractouille
+## Usage
 
-## Command mode
+Press `:` to enter command mode (Vim-style). Full command reference in [`COMMANDS.md`](COMMANDS.md).
 
-Just like in Vim, press `:` to enter command mode. 
-A list of all available commands can be found by in the `COMMANDS.md` file.
+| Key | Action |
+|-----|--------|
+| `wasd` | Move |
+| `-` / `+` | Zoom |
+| `r` / `f` | Adjust iterations |
+| `space` | Cycle palette |
+| `enter` | Switch fractal set |
+| `q` | Quit |
 
-# Screenshots or records
+Screenshots and records are automatically saved to your system's Pictures folder. See [`RECORD.md`](RECORD.md).
 
-Screenshots and records are automatically saved to your system's Pictures folder inside of `fractouille`.
-Recording need `ffmpeg` to be installed on your system, more information can be found in the `RECORD.md` file.
+## Roadmap & Contributing
 
-## Roadmap
+Fractouille aims to evolve into a multi-frontend fractal engine with GPU support, arbitrary precision rendering and multiple CPU render backends.  
+See [`ROADMAP.md`](ROADMAP.md) for the full picture.
 
-- [x] Basic fractal sets implementation
-    - [x] Mandelbrot Set
-    - [x] Julia Set
-    - [x] Burning Ship
-- [x] Screenshot functionality
-    - [x] Smooth coloring
-    - [x] Auto-save
-- [x] Variable power parameter
-
-- [ ] Border tracing method
-- [ ] Arbitray precision
-- [x] Customizable color palette
-
-- [x] Phoenix Set implementation
-- [ ] Newton fractals
-- [ ] Lyapunov fractals
+Contributions are welcome, there is a lot of ground to cover.
 
 ## Museum
 
